@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>DJ Notebook</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bricolage+Grotesque:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #0e0e12;
+  --bg2: #13131a;
+  --surface: #1a1a24;
+  --card: #1e1e2a;
+  --card2: #22222f;
+  --border: #2e2e3e;
+  --border2: #3a3a50;
+  --accent: #e8c547;
+  --accent2: #4ecdc4;
+  --accent3: #ff6b6b;
+  --purple: #9b8afb;
+  --text: #f0f0f8;
+  --text2: #a0a0b8;
+  --text3: #60607a;
+  --mono: 'DM Mono', monospace;
+  --sans: 'Bricolage Grotesque', sans-serif;
+  --r: 12px;
+  --rs: 8px;
+  --sidebar: 68px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── LAYOUT ── */
+.app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar);
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.25rem 0;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+.logo-mark {
+  width: 38px; height: 38px;
+  background: var(--accent);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+  animation: spin 12s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.nav-item {
+  width: 46px; height: 46px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--text3);
+  transition: all 0.15s;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.nav-item:hover { background: var(--surface); color: var(--text2); }
+.nav-item.active { background: var(--surface); color: var(--accent); }
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 20px;
+  background: var(--accent);
+  border-radius: 0 2px 2px 0;
+}
+
+.nav-tooltip {
+  position: absolute;
+  left: 54px;
+  background: var(--card2);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  border: 1px solid var(--border);
+  z-index: 200;
+  transition: opacity 0.15s;
+}
+
+.nav-item:hover .nav-tooltip { opacity: 1; }
+.sidebar-bottom { margin-top: auto; }
+
+/* ── CONTENT AREA ── */
+.content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 1.5rem;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 1rem;
+}
+
+.topbar-left { display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 0; }
+.page-title { font-size: 0.95rem; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
+.topbar-right { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
+
+.search-wrap { position: relative; }
+.search-wrap input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.4rem 0.9rem 0.4rem 2rem;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  width: 200px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-wrap input:focus { border-color: var(--accent2); }
+.search-wrap::before { content: '🔍'; position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%); font-size: 0.7rem; }
+
+.btn { padding: 0.4rem 0.9rem; border-radius: 8px; font-family: var(--sans); font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s; border: none; white-space: nowrap; }
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:hover { background: #f0d060; }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text2); }
+.btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+.btn-danger { background: transparent; border: 1px solid var(--border); color: var(--text3); }
+.btn-danger:hover { border-color: var(--accent3); color: var(--accent3); }
+.btn-sm { padding: 0.3rem 0.7rem; font-size: 0.72rem; }
+
+/* ── MAIN SCROLL ── */
+.main-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+/* ── PANELS ── */
+.panel { display: none; }
+.panel.active { display: block; animation: fadeUp 0.25s ease; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── FILTER BAR ── */
+.filter-bar { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.chip { padding: 0.3rem 0.8rem; border-radius: 20px; font-family: var(--mono); font-size: 0.68rem; border: 1px solid var(--border); color: var(--text2); cursor: pointer; transition: all 0.15s; }
+.chip.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 500; }
+.chip:hover:not(.active) { border-color: var(--border2); color: var(--text); }
+
+/* ── TRACK GRID ── */
+.track-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 0.9rem; }
+
+.track-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.track-card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+.track-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), transparent); opacity: 0; transition: opacity 0.2s; }
+.track-card:hover::after { opacity: 1; }
+
+.tc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; gap: 0.5rem; }
+.tc-title { font-size: 0.9rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.15rem; }
+.tc-artist { font-size: 0.72rem; color: var(--text3); font-family: var(--mono); }
+.key-badge { padding: 0.25rem 0.6rem; border-radius: 7px; font-family: var(--mono); font-weight: 500; font-size: 0.78rem; flex-shrink: 0; }
+.key-A { background: rgba(78,205,196,0.15); color: var(--accent2); border: 1px solid rgba(78,205,196,0.25); }
+.key-B { background: rgba(232,197,71,0.12); color: var(--accent); border: 1px solid rgba(232,197,71,0.2); }
+.key-none { background: rgba(255,255,255,0.05); color: var(--text3); border: 1px solid var(--border); }
+
+.tc-stats { display: flex; gap: 1rem; margin-bottom: 0.75rem; }
+.stat-item { display: flex; flex-direction: column; gap: 0.15rem; }
+.stat-label { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.1em; color: var(--text3); text-transform: uppercase; }
+.stat-value { font-family: var(--mono); font-size: 0.82rem; color: var(--text); }
+
+.energy-bar { display: flex; gap: 2px; align-items: center; margin-top: 2px; }
+.e-seg { width: 11px; height: 4px; border-radius: 2px; background: var(--border); }
+.e-seg.on { background: var(--accent); }
+.e-seg.on.hi { background: var(--accent3); }
+
+.tc-tags { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.7rem; }
+.tag { padding: 0.12rem 0.5rem; border-radius: 4px; font-family: var(--mono); font-size: 0.6rem; }
+.tag-house { background: rgba(232,197,71,0.1); color: var(--accent); }
+.tag-peak { background: rgba(255,107,107,0.1); color: var(--accent3); }
+.tag-open { background: rgba(78,205,196,0.1); color: var(--accent2); }
+.tag-vibe { background: rgba(155,138,251,0.1); color: var(--purple); }
+.tag-default { background: rgba(255,255,255,0.05); color: var(--text3); }
+
+.tc-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 0.65rem; border-top: 1px solid var(--border); }
+.struct-mini { display: flex; gap: 2px; }
+.sm-seg { height: 12px; border-radius: 2px; font-size: 0; }
+.gn-mini { font-family: var(--mono); font-size: 0.62rem; color: var(--text3); display: flex; align-items: center; gap: 0.3rem; }
+
+/* ── DETAIL VIEW ── */
+.detail-view { display: none; }
+.detail-view.active { display: block; animation: fadeUp 0.25s ease; }
+
+.detail-hero { display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; align-items: start; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+.detail-title { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1.1; margin-bottom: 0.3rem; }
+.detail-artist { font-size: 0.9rem; color: var(--text2); margin-bottom: 0.9rem; }
+.detail-tags { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.tag-add { background: transparent; border: 1px dashed var(--border2); color: var(--text3); cursor: pointer; }
+.tag-add:hover { border-color: var(--accent); color: var(--accent); }
+
+.key-display { width: 64px; height: 64px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.key-display .kn { font-family: var(--mono); font-size: 1.3rem; font-weight: 700; line-height: 1; }
+.key-display .km { font-family: var(--mono); font-size: 0.6rem; margin-top: 0.2rem; }
+
+.detail-stats { display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-end; }
+.detail-stats-row { display: flex; gap: 1.25rem; }
+.dstat { text-align: right; }
+.dstat .stat-label { display: block; margin-bottom: 0.15rem; }
+.dstat .stat-value { font-family: var(--mono); font-size: 0.95rem; }
+
+/* ── SECTIONS ── */
+.section { margin-bottom: 1.5rem; }
+.sec-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+.sec-title { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.15em; color: var(--text3); text-transform: uppercase; }
+.sec-edit { font-family: var(--mono); font-size: 0.63rem; color: var(--text3); cursor: pointer; padding: 0.18rem 0.45rem; border-radius: 4px; border: 1px solid transparent; transition: all 0.15s; }
+.sec-edit:hover { color: var(--accent); border-color: rgba(232,197,71,0.3); }
+
+/* ── TIMELINE ── */
+.timeline-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 1.1rem; }
+.tl-bar { display: flex; gap: 2px; height: 28px; margin-bottom: 0.9rem; }
+.tl-seg { border-radius: 5px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 0.55rem; cursor: default; transition: filter 0.15s; }
+.tl-seg:hover { filter: brightness(1.3); }
+.tl-rows { display: flex; flex-direction: column; gap: 0.45rem; }
+.tl-row { display: flex; align-items: flex-start; gap: 0.9rem; font-family: var(--mono); font-size: 0.73rem; }
+.tl-time { color: var(--text3); min-width: 34px; }
+.tl-name { min-width: 76px; font-weight: 500; }
+.tl-desc { color: var(--text2); flex: 1; line-height: 1.6; }
+.tl-badge { padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.58rem; flex-shrink: 0; }
+
+/* ── AI BLOCK ── */
+.ai-block { background: linear-gradient(135deg, rgba(155,138,251,0.04), rgba(78,205,196,0.04)); border: 1px solid rgba(155,138,251,0.18); border-radius: var(--r); padding: 1.1rem; }
+.ai-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.9rem; }
+.ai-badge { display: inline-flex; align-items: center; gap: 0.25rem; background: rgba(155,138,251,0.1); border: 1px solid rgba(155,138,251,0.25); border-radius: 4px; padding: 0.12rem 0.45rem; font-family: var(--mono); font-size: 0.6rem; color: var(--purple); }
+.ai-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+.ai-item-label { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.1em; color: var(--text3); text-transform: uppercase; margin-bottom: 0.25rem; }
+.ai-item-value { font-size: 0.8rem; color: var(--text2); line-height: 1.6; }
+.ai-item-value strong { color: var(--text); }
+
+.user-note-block { margin-top: 0.9rem; padding-top: 0.9rem; border-top: 1px solid var(--border); }
+.user-note-label { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.1em; color: var(--text3); text-transform: uppercase; margin-bottom: 0.4rem; }
+.user-note-display { font-family: var(--mono); font-size: 0.75rem; color: var(--text2); line-height: 1.7; background: var(--surface); border: 1px solid var(--border); border-radius: var(--rs); padding: 0.7rem 0.9rem; min-height: 60px; white-space: pre-wrap; cursor: pointer; }
+.user-note-display:hover { border-color: var(--border2); }
+textarea.note-input { width: 100%; background: var(--surface); border: 1px solid var(--accent2); border-radius: var(--rs); color: var(--text); font-family: var(--mono); font-size: 0.75rem; padding: 0.7rem 0.9rem; resize: vertical; outline: none; line-height: 1.7; min-height: 80px; }
+
+/* ── CHORD GRID ── */
+.chord-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+.chord-block { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 1.1rem; }
+.chord-block h4 { font-size: 0.75rem; font-weight: 700; margin-bottom: 0.65rem; }
+.chord-row { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.4rem; }
+.chord-pill { padding: 0.2rem 0.55rem; border-radius: 5px; font-family: var(--mono); font-size: 0.72rem; font-weight: 500; background: rgba(232,197,71,0.1); color: var(--accent); border: 1px solid rgba(232,197,71,0.2); }
+.chord-sep { color: var(--border2); font-family: var(--mono); font-size: 0.75rem; }
+.chord-note { font-family: var(--mono); font-size: 0.68rem; color: var(--text3); line-height: 1.6; margin-top: 0.4rem; }
+
+/* ── GN BLOCK ── */
+.gn-block { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 1.1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.gn-left { display: flex; align-items: center; gap: 0.85rem; }
+.gn-icon { width: 40px; height: 40px; border-radius: 9px; background: rgba(155,138,251,0.1); border: 1px solid rgba(155,138,251,0.2); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+.gn-info h4 { font-size: 0.82rem; font-weight: 700; margin-bottom: 0.15rem; }
+.gn-info p { font-family: var(--mono); font-size: 0.65rem; color: var(--text3); }
+.gn-btn { padding: 0.45rem 1rem; background: rgba(155,138,251,0.1); border: 1px solid rgba(155,138,251,0.25); border-radius: var(--rs); color: var(--purple); font-family: var(--mono); font-size: 0.7rem; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-block; }
+.gn-btn:hover { background: rgba(155,138,251,0.2); }
+
+/* ── NOTES PANEL ── */
+.notes-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.note-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 1.1rem; cursor: pointer; transition: all 0.2s; }
+.note-card:hover { border-color: var(--border2); }
+.note-card h4 { font-size: 0.88rem; font-weight: 700; margin-bottom: 0.35rem; }
+.note-card p { font-family: var(--mono); font-size: 0.73rem; color: var(--text2); line-height: 1.6; }
+.note-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 0.65rem; padding-top: 0.65rem; border-top: 1px solid var(--border); }
+.note-date { font-family: var(--mono); font-size: 0.6rem; color: var(--text3); }
+
+/* ── CAMELOT WHEEL ── */
+.wheel-layout { display: grid; grid-template-columns: 260px 1fr; gap: 1.5rem; align-items: start; }
+.wheel-info-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem; }
+.wheel-info-card h3 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem; }
+.compat-list { display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.9rem; }
+.compat-row { display: flex; align-items: center; gap: 0.65rem; font-family: var(--mono); font-size: 0.73rem; }
+.compat-key { width: 38px; height: 26px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 500; }
+
+/* ── FLX4 ── */
+.flx4-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; margin-bottom: 1.5rem; }
+.tip-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 1.1rem; }
+.tip-card h4 { font-size: 0.8rem; font-weight: 700; margin-bottom: 0.6rem; }
+.tip-card p { font-size: 0.75rem; color: var(--text2); line-height: 1.7; font-family: var(--mono); }
+.link-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+.ext-link { background: var(--card); border: 1px solid var(--border); border-radius: var(--rs); padding: 0.9rem 1.1rem; display: flex; align-items: center; gap: 0.7rem; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+.ext-link:hover { border-color: var(--accent); }
+.ext-icon { width: 34px; height: 34px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0; }
+.ext-text h4 { font-size: 0.8rem; font-weight: 700; color: var(--text); margin-bottom: 0.12rem; }
+.ext-text p { font-family: var(--mono); font-size: 0.6rem; color: var(--text3); }
+
+/* ── BPM TABLE ── */
+.bpm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
+.bpm-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 1rem 1.1rem; display: flex; align-items: center; gap: 1rem; }
+.bpm-range { font-family: var(--mono); font-size: 1rem; font-weight: 700; }
+.bpm-info { flex: 1; }
+.bpm-genre { font-size: 0.82rem; font-weight: 700; margin-bottom: 0.15rem; }
+.bpm-bar-wrap { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.bpm-bar-fill { height: 100%; border-radius: 2px; }
+
+/* ── MODALS ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.25s ease; }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.modal-header h2 { font-size: 1rem; font-weight: 700; }
+.modal-close { background: none; border: none; color: var(--text3); font-size: 1.1rem; cursor: pointer; padding: 0.2rem; border-radius: 4px; transition: color 0.15s; }
+.modal-close:hover { color: var(--text); }
+.modal-body { padding: 1.5rem; }
+.modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.6rem; }
+
+.field { margin-bottom: 1rem; }
+.field label { display: block; font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em; color: var(--text3); text-transform: uppercase; margin-bottom: 0.4rem; }
+.field input, .field select, .field textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rs);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  padding: 0.55rem 0.8rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent2); }
+.field select option { background: var(--card); }
+.field textarea { resize: vertical; line-height: 1.6; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+/* ── LOADING / EMPTY ── */
+.loading { display: flex; align-items: center; justify-content: center; padding: 4rem; flex-direction: column; gap: 1rem; color: var(--text3); font-family: var(--mono); font-size: 0.8rem; }
+.spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: rotate 0.8s linear infinite; }
+@keyframes rotate { to { transform: rotate(360deg); } }
+
+.empty-state { text-align: center; padding: 4rem 2rem; color: var(--text3); }
+.empty-state .icon { font-size: 2.5rem; margin-bottom: 0.9rem; opacity: 0.4; }
+.empty-state p { font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; }
+
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--card2); border: 1px solid var(--border); border-radius: var(--rs); padding: 0.7rem 1.1rem; font-family: var(--mono); font-size: 0.75rem; color: var(--text); z-index: 1000; animation: slideInRight 0.3s ease; display: flex; align-items: center; gap: 0.5rem; }
+.toast.success { border-color: rgba(78,205,196,0.4); }
+.toast.error { border-color: rgba(255,107,107,0.4); }
+@keyframes slideInRight { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* ── STATUS BAR ── */
+.statusbar { background: var(--bg2); border-top: 1px solid var(--border); padding: 0.45rem 1.5rem; display: flex; align-items: center; gap: 1.25rem; font-family: var(--mono); font-size: 0.62rem; color: var(--text3); flex-shrink: 0; }
+.status-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent2); animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ── BACK BTN ── */
+.back-btn { display: flex; align-items: center; gap: 0.4rem; font-family: var(--mono); font-size: 0.7rem; color: var(--text3); cursor: pointer; padding: 0.3rem 0.7rem; border: 1px solid var(--border); border-radius: 6px; transition: all 0.15s; background: none; }
+.back-btn:hover { color: var(--text); border-color: var(--border2); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .sidebar { width: 56px; }
+  .nav-tooltip { display: none; }
+  .search-wrap input { width: 140px; }
+  .track-grid { grid-template-columns: 1fr; }
+  .detail-hero { grid-template-columns: 1fr; }
+  .chord-grid, .ai-grid, .flx4-grid, .bpm-grid { grid-template-columns: 1fr; }
+  .wheel-layout { grid-template-columns: 1fr; }
+  .link-grid { grid-template-columns: 1fr; }
+  .form-row, .form-row-3 { grid-template-columns: 1fr; }
+  .main-scroll { padding: 1rem; }
+  .topbar { padding: 0 1rem; }
+}
+
+@media (max-width: 480px) {
+  .sidebar { display: none; }
+  .app { flex-direction: column; }
+  .bottom-nav { display: flex; }
+}
+
+.bottom-nav {
+  display: none;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  padding: 0.5rem;
+  gap: 0.25rem;
+  justify-content: space-around;
+  flex-shrink: 0;
+}
+
+.bottom-nav .nav-item { flex-direction: column; gap: 0.15rem; font-size: 0.9rem; height: auto; padding: 0.35rem 0; width: 52px; }
+.bottom-nav .nav-item span { font-size: 0.55rem; font-family: var(--mono); color: var(--text3); }
+.bottom-nav .nav-item.active span { color: var(--accent); }
+
+/* ── ANALYSIS FLOW ── */
+.analysis-flow { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.75rem; }
+.flow-step { display: flex; align-items: center; gap: 0.75rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--rs); padding: 0.65rem 0.9rem; }
+.flow-num { width: 22px; height: 22px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 0.65rem; font-weight: 700; flex-shrink: 0; }
+.flow-step.step-1 .flow-num { background: rgba(232,197,71,0.2); color: var(--accent); }
+.flow-step.step-2 .flow-num { background: rgba(78,205,196,0.2); color: var(--accent2); }
+.flow-step.step-3 .flow-num { background: rgba(155,138,251,0.2); color: var(--purple); }
+.flow-info { flex: 1; }
+.flow-name { font-size: 0.8rem; font-weight: 700; margin-bottom: 0.12rem; }
+.flow-desc { font-family: var(--mono); font-size: 0.65rem; color: var(--text3); }
+.flow-link { padding: 0.3rem 0.7rem; border-radius: 6px; font-family: var(--mono); font-size: 0.65rem; cursor: pointer; text-decoration: none; transition: all 0.15s; border: none; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <div class="logo-mark">🎵</div>
+    <div class="nav-item active" onclick="nav('tracks')" id="nav-tracks"><span>🎵</span><span class="nav-tooltip">歌曲庫</span></div>
+    <div class="nav-item" onclick="nav('notes')" id="nav-notes"><span>📝</span><span class="nav-tooltip">學習筆記</span></div>
+    <div class="nav-item" onclick="nav('theory')" id="nav-theory"><span>🎯</span><span class="nav-tooltip">樂理速查</span></div>
+    <div class="nav-item" onclick="nav('flx4')" id="nav-flx4"><span>🎛</span><span class="nav-tooltip">FLX4 設備</span></div>
+    <div class="nav-item" onclick="nav('tools')" id="nav-tools"><span>🔗</span><span class="nav-tooltip">工具入口</span></div>
+    <div class="sidebar-bottom">
+      <div class="nav-item" onclick="exportData()" title="備份資料"><span>💾</span><span class="nav-tooltip">備份匯出</span></div>
+    </div>
+  </nav>
+
+  <div class="content-area">
+    <!-- TOPBAR -->
+    <div class="topbar" id="topbar">
+      <div class="topbar-left">
+        <button class="back-btn" id="back-btn" onclick="backToList()" style="display:none">← 返回</button>
+        <span class="page-title" id="page-title">歌曲庫</span>
+        <span style="font-family:var(--mono);font-size:0.68rem;color:var(--text3);" id="page-sub"></span>
+      </div>
+      <div class="topbar-right" id="topbar-right">
+        <div class="search-wrap"><input type="text" id="search-input" placeholder="搜尋..." oninput="renderTracks()"></div>
+        <button class="btn btn-primary" onclick="openAddTrack()">+ 新增歌曲</button>
+      </div>
+    </div>
+
+    <!-- MAIN SCROLL -->
+    <div class="main-scroll" id="main-scroll">
+
+      <!-- ═══ TRACKS PANEL ═══ -->
+      <div class="panel active" id="panel-tracks">
+        <div class="filter-bar" id="filter-bar"></div>
+        <div id="tracks-list-view">
+          <div class="track-grid" id="track-grid"></div>
+        </div>
+        <div id="track-detail-view" style="display:none;"></div>
+      </div>
+
+      <!-- ═══ NOTES PANEL ═══ -->
+      <div class="panel" id="panel-notes">
+        <div class="notes-list" id="notes-list"></div>
+      </div>
+
+      <!-- ═══ THEORY PANEL ═══ -->
+      <div class="panel" id="panel-theory">
+        <p style="font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;color:var(--text3);text-transform:uppercase;margin-bottom:1rem;">Camelot Wheel — 點選查看相容 Key</p>
+        <div class="wheel-layout">
+          <svg id="camelot-svg" viewBox="0 0 260 260" style="width:260px;height:260px;cursor:pointer;flex-shrink:0;"></svg>
+          <div class="wheel-info-card">
+            <h3 id="wheel-selected-title">點選任一 Key</h3>
+            <p style="font-family:var(--mono);font-size:0.72rem;color:var(--text2);line-height:1.6;" id="wheel-selected-desc">在左側圓形輪盤點選一個 Key，右側會顯示可以相容接歌的所有 Key。</p>
+            <div class="compat-list" id="compat-list"></div>
+          </div>
+        </div>
+
+        <p style="font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;color:var(--text3);text-transform:uppercase;margin:1.5rem 0 0.9rem;">BPM 速度參考</p>
+        <div class="bpm-grid">
+          <div class="bpm-card"><div class="bpm-range" style="color:#fb7185;">85–100</div><div class="bpm-info"><div class="bpm-genre">Hip-Hop / R&B</div><div class="bpm-bar-wrap"><div class="bpm-bar-fill" style="width:55%;background:#fb7185;"></div></div></div></div>
+          <div class="bpm-card"><div class="bpm-range" style="color:#f59e0b;">100–115</div><div class="bpm-info"><div class="bpm-genre">Pop / R&B</div><div class="bpm-bar-wrap"><div class="bpm-bar-fill" style="width:63%;background:#f59e0b;"></div></div></div></div>
+          <div class="bpm-card"><div class="bpm-range" style="color:var(--accent);">120–128</div><div class="bpm-info"><div class="bpm-genre">House</div><div class="bpm-bar-wrap"><div class="bpm-bar-fill" style="width:73%;background:var(--accent);"></div></div></div></div>
+          <div class="bpm-card"><div class="bpm-range" style="color:var(--purple);">130–145</div><div class="bpm-info"><div class="bpm-genre">Techno</div><div class="bpm-bar-wrap"><div class="bpm-bar-fill" style="width:82%;background:var(--purple);"></div></div></div></div>
+          <div class="bpm-card"><div class="bpm-range" style="color:var(--accent2);">160–180</div><div class="bpm-info"><div class="bpm-genre">Drum & Bass</div><div class="bpm-bar-wrap"><div class="bpm-bar-fill" style="width:100%;background:var(--accent2);"></div></div></div></div>
+        </div>
+
+        <p style="font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;color:var(--text3);text-transform:uppercase;margin-bottom:0.9rem;">EQ 接歌技巧</p>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.1rem;font-family:var(--mono);font-size:0.75rem;line-height:2;">
+          <div><span style="color:var(--accent3);">LOW (Bass)</span> — 接歌時新曲 Low 砍到底，節奏對齊後才推上來。兩條 Low 疊加會爆音。</div>
+          <div><span style="color:var(--accent2);">MID (人聲)</span> — 過渡期可把舊曲 Mid 砍掉，讓新曲人聲清楚進來。</div>
+          <div><span style="color:var(--purple);">HIGH (Hi-hat)</span> — 兩曲同時保留通常沒問題，高頻疊加可接受。</div>
+        </div>
+      </div>
+
+      <!-- ═══ FLX4 PANEL ═══ -->
+      <div class="panel" id="panel-flx4">
+        <p style="font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;color:var(--text3);text-transform:uppercase;margin-bottom:0.9rem;">FLX4 核心功能</p>
+        <div class="flx4-grid">
+          <div class="tip-card"><h4>🎛 EFX / Filter</h4><p>Filter knob 逆時針 = Low-pass（濾高頻），順時針 = High-pass（濾低頻）。接歌時先開 Filter 遮蓋，進入後慢慢回正。</p></div>
+          <div class="tip-card"><h4>⚡ Performance Pads</h4><p>Hot Cue 模式：pad 1–4 設定進場點。Loop 模式：快速設定 4/8/16 拍 loop，讓舊曲延長給新曲時間進場。</p></div>
+          <div class="tip-card"><h4>🎚 Channel Fader</h4><p>新手建議用 Channel Fader 接歌而非 Crossfader，控制更精準。漸入漸出建議 8–16 拍完成。</p></div>
+          <div class="tip-card"><h4>🔊 Trim Knob</h4><p>每個 channel 頂端的 Trim 控制輸入增益。接歌前先確認兩軌 VU meter 峰值相近，避免音量落差。</p></div>
+          <div class="tip-card"><h4>🎵 Rekordbox 分析</h4><p>把歌匯入 Rekordbox → 右鍵「分析波形」→ 自動取得精準 BPM 和 Key。中英文歌都適用。</p></div>
+          <div class="tip-card"><h4>💡 新手接歌流程</h4><p>1. 耳機監聽新曲 2. 調整 pitch 讓 BPM 對齊 3. 新曲 Low 砍底 4. 在 phrase 結尾推 fader 5. 慢慢還 Low</p></div>
+        </div>
+
+        <p style="font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;color:var(--text3);text-transform:uppercase;margin-bottom:0.9rem;">我的 FLX4 筆記</p>
+        <div id="flx4-notes-list" style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1rem;"></div>
+        <button class="btn btn-ghost" onclick="openAddNote('flx4')">+ 新增 FLX4 筆記</button>
+      </div>
+
+      <!-- ═══ TOOLS PANEL ═══ -->
+      <div class="panel" id="panel-tools">
+        <p style="font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;color:var(--text3);text-transform:uppercase;margin-bottom:0.9rem;">BPM / Key 分析流程</p>
+        <div class="analysis-flow">
+          <div class="flow-step step-1">
+            <div class="flow-num">1</div>
+            <div class="flow-info"><div class="flow-name">Tunebat</div><div class="flow-desc">資料庫搜尋，主流英文歌 / 知名華語歌，秒出結果</div></div>
+            <a href="https://tunebat.com" target="_blank" class="flow-link" style="background:rgba(232,197,71,0.1);color:var(--accent);border:1px solid rgba(232,197,71,0.2);">開啟 →</a>
+          </div>
+          <div class="flow-step step-2">
+            <div class="flow-num">2</div>
+            <div class="flow-info"><div class="flow-name">Cyanite</div><div class="flow-desc">上傳音檔分析，中英文都可，找不到的歌用這個</div></div>
+            <a href="https://cyanite.ai" target="_blank" class="flow-link" style="background:rgba(78,205,196,0.1);color:var(--accent2);border:1px solid rgba(78,205,196,0.2);">開啟 →</a>
+          </div>
+          <div class="flow-step step-3">
+            <div class="flow-num">3</div>
+            <div class="flow-info"><div class="flow-name">Rekordbox</div><div class="flow-desc">器材在旁時使用，最準確，中英文都通，無限制</div></div>
+            <span class="flow-link" style="background:rgba(155,138,251,0.1);color:var(--purple);border:1px solid rgba(155,138,251,0.2);">本機</span>
+          </div>
+        </div>
+
+        <p style="font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;color:var(--text3);text-transform:uppercase;margin:1.5rem 0 0.9rem;">常用工具</p>
+        <div class="link-grid">
+          <a href="https://chordify.net" target="_blank" class="ext-link"><div class="ext-icon" style="background:rgba(232,197,71,0.1);">🎵</div><div class="ext-text"><h4>Chordify</h4><p>自動和弦分析</p></div></a>
+          <a href="https://goodnotes.com" target="_blank" class="ext-link"><div class="ext-icon" style="background:rgba(155,138,251,0.1);">✏️</div><div class="ext-text"><h4>GoodNotes</h4><p>手寫譜 + 歌詞標注</p></div></a>
+          <a href="https://tunebat.com" target="_blank" class="ext-link"><div class="ext-icon" style="background:rgba(78,205,196,0.1);">🔍</div><div class="ext-text"><h4>Tunebat</h4><p>BPM / Key 查詢</p></div></a>
+          <a href="https://www.youtube.com/@CrossfaderDJ" target="_blank" class="ext-link"><div class="ext-icon" style="background:rgba(255,107,107,0.1);">🎬</div><div class="ext-text"><h4>Crossfader</h4><p>DJ 教學 YouTube</p></div></a>
+          <a href="https://www.pioneerdj.com/en/support/software/rekordbox/" target="_blank" class="ext-link"><div class="ext-icon" style="background:rgba(255,255,255,0.05);">🎛</div><div class="ext-text"><h4>Pioneer DJ</h4><p>FLX4 官方資源</p></div></a>
+          <a href="https://genius.com" target="_blank" class="ext-link"><div class="ext-icon" style="background:rgba(255,183,0,0.1);">📜</div><div class="ext-text"><h4>Genius</h4><p>歌詞查詢</p></div></a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="statusbar">
+      <div class="status-dot"></div>
+      <span id="db-status">連線中...</span>
+      <span id="track-count">0 首歌</span>
+      <span id="notes-count">0 筆記</span>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV (mobile) -->
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="nav('tracks')"><span>🎵</span><span>歌曲庫</span></div>
+    <div class="nav-item" onclick="nav('notes')"><span>📝</span><span>筆記</span></div>
+    <div class="nav-item" onclick="nav('theory')"><span>🎯</span><span>樂理</span></div>
+    <div class="nav-item" onclick="nav('flx4')"><span>🎛</span><span>FLX4</span></div>
+    <div class="nav-item" onclick="nav('tools')"><span>🔗</span><span>工具</span></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: ADD/EDIT TRACK ═══ -->
+<div class="modal-overlay" id="modal-track" style="display:none;">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-track-title">新增歌曲</h2>
+      <button class="modal-close" onclick="closeModal('modal-track')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="field"><label>歌名 *</label><input type="text" id="f-title" placeholder="Song Title"></div>
+        <div class="field"><label>歌手 / 藝人</label><input type="text" id="f-artist" placeholder="Artist"></div>
+      </div>
+      <div class="form-row-3">
+        <div class="field"><label>BPM</label><input type="number" id="f-bpm" placeholder="128" min="60" max="200"></div>
+        <div class="field"><label>Camelot Key</label>
+          <select id="f-key">
+            <option value="">選擇 Key</option>
+            <option>1A</option><option>1B</option><option>2A</option><option>2B</option>
+            <option>3A</option><option>3B</option><option>4A</option><option>4B</option>
+            <option>5A</option><option>5B</option><option>6A</option><option>6B</option>
+            <option>7A</option><option>7B</option><option>8A</option><option>8B</option>
+            <option>9A</option><option>9B</option><option>10A</option><option>10B</option>
+            <option>11A</option><option>11B</option><option>12A</option><option>12B</option>
+          </select>
+        </div>
+        <div class="field"><label>Genre</label>
+          <select id="f-genre">
+            <option value="">選擇</option>
+            <option>House</option><option>Techno</option><option>Hip-Hop</option>
+            <option>R&B</option><option>Pop</option><option>D&B</option>
+            <option>Synth-pop</option><option>華語 Pop</option><option>其他</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>能量 (1–10)</label><input type="number" id="f-energy" placeholder="7" min="1" max="10"></div>
+        <div class="field"><label>Capo (吉他)</label><input type="number" id="f-capo" placeholder="0" min="0" max="12"></div>
+      </div>
+      <div class="field"><label>標籤 (逗號分隔)</label><input type="text" id="f-tags" placeholder="開場曲, 高峰期, 夜店感, 華語..."></div>
+      <div class="field"><label>歌曲結構時間軸</label><textarea id="f-structure" rows="4" placeholder="0:00  Intro   32拍 無人聲 ← 進場點&#10;0:32  Verse 1  人聲進&#10;1:15  Chorus  能量高 ← 危險點&#10;3:00  Outro   漸弱 ← 出場點"></textarea></div>
+      <div class="field"><label>和弦進行</label><textarea id="f-chords" rows="3" placeholder="Verse: Am - F - C - G&#10;Chorus: F - C - G - Am"></textarea></div>
+      <div class="field"><label>接歌備註 / 個人筆記</label><textarea id="f-mixing-notes" rows="3" placeholder="適合接在 XX 後面，注意 1:15 突然拉高能量..."></textarea></div>
+      <div class="field"><label>GoodNotes 連結</label><input type="text" id="f-gn-link" placeholder="goodnotes://..."></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-track')">取消</button>
+      <button class="btn btn-primary" onclick="saveTrack()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: ADD/EDIT NOTE ═══ -->
+<div class="modal-overlay" id="modal-note" style="display:none;">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-note-title">新增筆記</h2>
+      <button class="modal-close" onclick="closeModal('modal-note')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>標題 *</label><input type="text" id="n-title" placeholder="筆記標題"></div>
+      <div class="field"><label>標籤 (逗號分隔)</label><input type="text" id="n-tags" placeholder="EQ技巧, 接歌, 樂理, FLX4..."></div>
+      <div class="field"><label>內容</label><textarea id="n-content" rows="8" placeholder="在這裡記錄你的學習心得、技巧、靈感..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-note')">取消</button>
+      <button class="btn btn-primary" onclick="saveNote()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ SUPABASE INIT ═══
+const { createClient } = supabase;
+const sb = createClient(
+  'https://nabybzemfhgsgkaylvcz.supabase.co',
+  'sb_publishable_tac-mTmhTpZaY0My5aXoyA_YEg1rhfJ'
+);
+
+// ═══ STATE ═══
+let tracks = [];
+let notes = [];
+let currentPanel = 'tracks';
+let editingTrackId = null;
+let editingNoteId = null;
+let noteCategory = 'general';
+let activeFilter = 'all';
+let selectedWheelKey = null;
+
+// ═══ CAMELOT DATA ═══
+const CAMELOT = [
+  {id:'1A',key:'A♭m',type:'A'},{id:'1B',key:'B♭',type:'B'},
+  {id:'2A',key:'E♭m',type:'A'},{id:'2B',key:'G♭',type:'B'},
+  {id:'3A',key:'B♭m',type:'A'},{id:'3B',key:'D♭',type:'B'},
+  {id:'4A',key:'Fm',type:'A'},{id:'4B',key:'A♭',type:'B'},
+  {id:'5A',key:'Cm',type:'A'},{id:'5B',key:'E♭',type:'B'},
+  {id:'6A',key:'Gm',type:'A'},{id:'6B',key:'B♭',type:'B'},
+  {id:'7A',key:'Dm',type:'A'},{id:'7B',key:'F',type:'B'},
+  {id:'8A',key:'Am',type:'A'},{id:'8B',key:'C',type:'B'},
+  {id:'9A',key:'Em',type:'A'},{id:'9B',key:'G',type:'B'},
+  {id:'10A',key:'Bm',type:'A'},{id:'10B',key:'D',type:'B'},
+  {id:'11A',key:'F♯m',type:'A'},{id:'11B',key:'A',type:'B'},
+  {id:'12A',key:'C♯m',type:'A'},{id:'12B',key:'E',type:'B'},
+];
+
+function getCompat(id) {
+  const num = parseInt(id);
+  const letter = id.slice(-1);
+  const prev = num === 1 ? 12 : num - 1;
+  const next = num === 12 ? 1 : num + 1;
+  const other = letter === 'A' ? 'B' : 'A';
+  return [id, `${prev}${letter}`, `${next}${letter}`, `${num}${other}`];
+}
+
+// ═══ DB INIT ═══
+async function initDB() {
+  try {
+    // Create tables if not exist via SQL
+    await sb.rpc('exec_sql', { sql: '' }).catch(() => {}); // ignore
+
+    // Try to create tables
+    const { error: e1 } = await sb.from('tracks').select('id').limit(1);
+    const { error: e2 } = await sb.from('notes').select('id').limit(1);
+
+    if (e1 || e2) {
+      // Tables don't exist, show setup instructions
+      document.getElementById('db-status').textContent = '⚠ 需要初始化資料庫';
+      showSetupInstructions();
+      return;
+    }
+
+    document.getElementById('db-status').textContent = '✓ 已連線 Supabase';
+    loadAll();
+  } catch(e) {
+    document.getElementById('db-status').textContent = '⚠ 連線失敗';
+  }
+}
+
+function showSetupInstructions() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.style.cssText = 'display:flex;';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:640px;">
+      <div class="modal-header"><h2>🚀 初次設定 — 建立資料庫</h2></div>
+      <div class="modal-body">
+        <p style="font-family:var(--mono);font-size:0.78rem;color:var(--text2);line-height:1.8;margin-bottom:1rem;">
+          請到 Supabase → SQL Editor，貼上以下指令執行，建立需要的資料表：
+        </p>
+        <textarea readonly style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--accent2);font-family:var(--mono);font-size:0.7rem;padding:1rem;line-height:1.7;height:280px;resize:none;outline:none;" onclick="this.select()">-- DJ Notebook Database Setup
+CREATE TABLE IF NOT EXISTS tracks (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  title text NOT NULL,
+  artist text,
+  bpm integer,
+  camelot_key text,
+  genre text,
+  energy integer,
+  capo integer DEFAULT 0,
+  tags text[],
+  structure text,
+  chords text,
+  mixing_notes text,
+  gn_link text,
+  ai_suggestion text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS notes (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  title text NOT NULL,
+  content text,
+  category text DEFAULT 'general',
+  tags text[],
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE tracks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public access tracks" ON tracks FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public access notes" ON notes FOR ALL USING (true) WITH CHECK (true);</textarea>
+        <p style="font-family:var(--mono);font-size:0.7rem;color:var(--text3);margin-top:0.9rem;line-height:1.7;">
+          執行完成後重新整理頁面即可開始使用。
+        </p>
+      </div>
+      <div class="modal-footer">
+        <a href="https://supabase.com/dashboard/project/nabybzemfhgsgkaylvcz/sql" target="_blank" class="btn btn-primary">開啟 SQL Editor →</a>
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove();loadAll();">已完成，繼續</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+// ═══ LOAD DATA ═══
+async function loadAll() {
+  await Promise.all([loadTracks(), loadNotes()]);
+  renderTracks();
+  renderNotes();
+  renderFLX4Notes();
+  buildCamelotWheel();
+}
+
+async function loadTracks() {
+  const { data, error } = await sb.from('tracks').select('*').order('created_at', { ascending: false });
+  if (!error && data) {
+    tracks = data;
+    document.getElementById('track-count').textContent = tracks.length + ' 首歌';
+  }
+}
+
+async function loadNotes() {
+  const { data, error } = await sb.from('notes').select('*').order('created_at', { ascending: false });
+  if (!error && data) {
+    notes = data;
+    document.getElementById('notes-count').textContent = notes.length + ' 筆記';
+  }
+}
+
+// ═══ NAVIGATION ═══
+function nav(panel) {
+  currentPanel = panel;
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + panel).classList.add('active');
+  document.getElementById('nav-' + panel)?.classList.add('active');
+
+  // Update mobile nav
+  document.querySelectorAll('.bottom-nav .nav-item').forEach((n, i) => {
+    const panels = ['tracks','notes','theory','flx4','tools'];
+    if (panels[i] === panel) n.classList.add('active');
+    else n.classList.remove('active');
+  });
+
+  // Topbar
+  const titles = { tracks: '歌曲庫', notes: '學習筆記', theory: '樂理速查', flx4: 'FLX4 設備', tools: '工具入口' };
+  document.getElementById('page-title').textContent = titles[panel] || '';
+  document.getElementById('back-btn').style.display = 'none';
+
+  const tr = document.getElementById('topbar-right');
+  if (panel === 'tracks') {
+    tr.innerHTML = `<div class="search-wrap"><input type="text" id="search-input" placeholder="搜尋..." oninput="renderTracks()"></div><button class="btn btn-primary" onclick="openAddTrack()">+ 新增歌曲</button>`;
+    showTrackList();
+  } else if (panel === 'notes') {
+    tr.innerHTML = `<button class="btn btn-primary" onclick="openAddNote('general')">+ 新增筆記</button>`;
+  } else if (panel === 'flx4') {
+    tr.innerHTML = `<button class="btn btn-primary" onclick="openAddNote('flx4')">+ 新增筆記</button>`;
+  } else {
+    tr.innerHTML = '';
+  }
+}
+
+// ═══ TRACKS ═══
+function renderTracks() {
+  const query = document.getElementById('search-input')?.value?.toLowerCase() || '';
+  const filterBar = document.getElementById('filter-bar');
+
+  // Build filter chips
+  const allTags = [...new Set(tracks.flatMap(t => t.tags || []))].sort();
+  filterBar.innerHTML = `
+    <div class="chip ${activeFilter==='all'?'active':''}" onclick="setFilter('all')">全部 (${tracks.length})</div>
+    ${allTags.map(tag => `<div class="chip ${activeFilter===tag?'active':''}" onclick="setFilter('${tag}')">${tag}</div>`).join('')}
+  `;
+
+  let filtered = tracks;
+  if (activeFilter !== 'all') filtered = filtered.filter(t => (t.tags||[]).includes(activeFilter));
+  if (query) filtered = filtered.filter(t =>
+    (t.title||'').toLowerCase().includes(query) ||
+    (t.artist||'').toLowerCase().includes(query) ||
+    (t.camelot_key||'').toLowerCase().includes(query) ||
+    (t.genre||'').toLowerCase().includes(query) ||
+    String(t.bpm||'').includes(query)
+  );
+
+  const grid = document.getElementById('track-grid');
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">🎧</div><p>${tracks.length===0?'還沒有歌曲！點右上角「+ 新增歌曲」開始建立你的曲庫':'找不到符合的歌曲'}</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(t => {
+    const keyType = t.camelot_key ? (t.camelot_key.endsWith('B') ? 'key-B' : 'key-A') : 'key-none';
+    const energy = parseInt(t.energy) || 0;
+    const energyBars = Array.from({length:10}, (_,i) =>
+      `<div class="e-seg ${i<energy?'on':''}${i>=7&&i<energy?' hi':''}"></div>`).join('');
+    const tags = (t.tags||[]).map(tag => `<span class="tag tag-default">${tag}</span>`).join('');
+    return `
+      <div class="track-card" onclick="openTrackDetail('${t.id}')">
+        <div class="tc-header">
+          <div><div class="tc-title">${t.title||''}</div><div class="tc-artist">${t.artist||''}</div></div>
+          <div class="key-badge ${keyType}">${t.camelot_key||'—'}</div>
+        </div>
+        <div class="tc-stats">
+          <div class="stat-item"><span class="stat-label">BPM</span><span class="stat-value">${t.bpm||'—'}</span></div>
+          <div class="stat-item"><span class="stat-label">Genre</span><span class="stat-value" style="font-size:0.72rem;">${t.genre||'—'}</span></div>
+          <div class="stat-item"><span class="stat-label">Energy</span><div class="energy-bar">${energyBars}</div></div>
+        </div>
+        ${tags ? `<div class="tc-tags">${tags}</div>` : ''}
+        <div class="tc-footer">
+          <div style="font-family:var(--mono);font-size:0.62rem;color:var(--text3);">${new Date(t.created_at).toLocaleDateString('zh-TW')}</div>
+          ${t.gn_link ? '<div class="gn-mini">✏️ GoodNotes</div>' : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function setFilter(f) {
+  activeFilter = f;
+  renderTracks();
+}
+
+function showTrackList() {
+  document.getElementById('tracks-list-view').style.display = 'block';
+  document.getElementById('track-detail-view').style.display = 'none';
+  document.getElementById('back-btn').style.display = 'none';
+  document.getElementById('topbar-right').innerHTML = `<div class="search-wrap"><input type="text" id="search-input" placeholder="搜尋..." oninput="renderTracks()"></div><button class="btn btn-primary" onclick="openAddTrack()">+ 新增歌曲</button>`;
+  document.getElementById('filter-bar').style.display = 'flex';
+}
+
+function openTrackDetail(id) {
+  const track = tracks.find(t => t.id === id);
+  if (!track) return;
+
+  document.getElementById('tracks-list-view').style.display = 'none';
+  document.getElementById('filter-bar').style.display = 'none';
+  document.getElementById('track-detail-view').style.display = 'block';
+  document.getElementById('back-btn').style.display = 'flex';
+  document.getElementById('page-title').textContent = track.title;
+
+  document.getElementById('topbar-right').innerHTML = `
+    <button class="btn btn-ghost btn-sm" onclick="openEditTrack('${id}')">✏️ 編輯</button>
+    <button class="btn btn-danger btn-sm" onclick="deleteTrack('${id}')">🗑 刪除</button>`;
+
+  const keyType = track.camelot_key ? (track.camelot_key.endsWith('B') ? 'key-B' : 'key-A') : 'key-none';
+  const energy = parseInt(track.energy) || 0;
+  const energyBars = Array.from({length:10}, (_,i) =>
+    `<div class="e-seg ${i<energy?'on':''}${i>=7&&i<energy?' hi':''}"></div>`).join('');
+  const tags = (track.tags||[]).map(tag => `<span class="tag tag-default">${tag}</span>`).join('');
+  const structureLines = (track.structure||'').split('\n').filter(l=>l.trim()).map(line => {
+    const isBadge = line.includes('進場點') ? `<span class="tl-badge" style="background:rgba(78,205,196,0.1);color:var(--accent2);">⬆ 進場點</span>` :
+                   line.includes('出場點') ? `<span class="tl-badge" style="background:rgba(78,205,196,0.1);color:var(--accent2);">⬇ 出場點</span>` :
+                   line.includes('危險') ? `<span class="tl-badge" style="background:rgba(255,107,107,0.1);color:var(--accent3);">⚠ 危險點</span>` : '';
+    const parts = line.split(/\s+/);
+    const time = parts[0] || '';
+    const name = parts[1] || '';
+    const desc = parts.slice(2).join(' ').replace(/←.*$/, '').trim();
+    return `<div class="tl-row"><span class="tl-time">${time}</span><span class="tl-name">${name}</span><span class="tl-desc">${desc}</span>${isBadge}</div>`;
+  }).join('');
+
+  const chordLines = (track.chords||'').split('\n').filter(l=>l.trim()).map(line => {
+    const [section, ...rest] = line.split(':');
+    const chordsStr = rest.join(':');
+    const chordPills = (chordsStr||'').split(/[-—]/).map(c=>c.trim()).filter(Boolean)
+      .map(c=>`<span class="chord-pill">${c}</span>`).join('<span class="chord-sep">—</span>');
+    return `<div class="chord-block"><h4>🎵 ${section||''}</h4><div class="chord-row">${chordPills}</div></div>`;
+  }).join('');
+
+  const keyData = CAMELOT.find(c => c.id === track.camelot_key);
+  const compatKeys = track.camelot_key ? getCompat(track.camelot_key) : [];
+
+  document.getElementById('track-detail-view').innerHTML = `
+    <div class="detail-hero">
+      <div>
+        <div class="detail-title">${track.title}</div>
+        <div class="detail-artist">${track.artist||''}</div>
+        <div class="detail-tags">${tags}<span class="tag tag-add" onclick="openEditTrack('${track.id}')">+ 標籤</span></div>
+      </div>
+      <div class="detail-stats">
+        <div class="key-display ${keyType}" style="${track.camelot_key?.endsWith('B') ? 'background:rgba(232,197,71,0.1);border:1.5px solid rgba(232,197,71,0.3);' : 'background:rgba(78,205,196,0.1);border:1.5px solid rgba(78,205,196,0.3);'}">
+          <span class="kn" style="${track.camelot_key?.endsWith('B')?'color:var(--accent)':'color:var(--accent2)'}">${track.camelot_key||'—'}</span>
+          ${keyData ? `<span class="km" style="color:var(--text3);">${keyData.key}</span>` : ''}
+        </div>
+        <div class="detail-stats-row">
+          <div class="dstat"><span class="stat-label">BPM</span><span class="stat-value">${track.bpm||'—'}</span></div>
+          <div class="dstat"><span class="stat-label">Energy</span><div class="energy-bar" style="justify-content:flex-end;margin-top:3px;">${energyBars}</div></div>
+        </div>
+        ${track.capo ? `<div style="font-family:var(--mono);font-size:0.65rem;color:var(--accent2);">Capo ${track.capo}</div>` : ''}
+      </div>
+    </div>
+
+    ${track.structure ? `
+    <div class="section">
+      <div class="sec-header"><span class="sec-title">歌曲結構時間軸</span><span class="sec-edit" onclick="openEditTrack('${track.id}')">✏️ 編輯</span></div>
+      <div class="timeline-card"><div class="tl-rows">${structureLines}</div></div>
+    </div>` : ''}
+
+    <div class="section">
+      <div class="sec-header"><span class="sec-title">接歌建議</span></div>
+      <div class="ai-block">
+        <div class="ai-header"><span class="ai-badge">✦ Key 相容分析</span></div>
+        ${track.camelot_key ? `
+        <div class="ai-grid">
+          <div class="ai-item"><span class="ai-item-label">相容 Key</span><span class="ai-item-value"><strong>${compatKeys.join('、')}</strong></span></div>
+          <div class="ai-item"><span class="ai-item-label">BPM 接歌範圍</span><span class="ai-item-value">±<strong>3–5 BPM</strong>（${(parseInt(track.bpm)||0)-5} ~ ${(parseInt(track.bpm)||0)+5}）</span></div>
+        </div>` : '<p style="font-family:var(--mono);font-size:0.75rem;color:var(--text3);">請先設定 Camelot Key 才能顯示相容分析</p>'}
+        <div class="user-note-block">
+          <div class="user-note-label">✏️ 我的接歌備註</div>
+          <div class="user-note-display" onclick="editMixingNote('${track.id}')" title="點擊編輯">${track.mixing_notes || '<span style="color:var(--text3);">點擊新增接歌備註...</span>'}</div>
+        </div>
+      </div>
+    </div>
+
+    ${chordLines ? `
+    <div class="section">
+      <div class="sec-header"><span class="sec-title">吉他和弦分析</span><span class="sec-edit" onclick="openEditTrack('${track.id}')">✏️ 編輯</span></div>
+      <div class="chord-grid">${chordLines}</div>
+    </div>` : ''}
+
+    ${track.gn_link ? `
+    <div class="section">
+      <div class="sec-header"><span class="sec-title">手寫筆記</span></div>
+      <div class="gn-block">
+        <div class="gn-left"><div class="gn-icon">✏️</div><div class="gn-info"><h4>GoodNotes — ${track.title}</h4><p>手寫歌詞 + 和弦標注</p></div></div>
+        <a href="${track.gn_link}" class="gn-btn">開啟 GoodNotes →</a>
+      </div>
+    </div>` : ''}
+  `;
+}
+
+function backToList() {
+  nav('tracks');
+  renderTracks();
+}
+
+function editMixingNote(id) {
+  const track = tracks.find(t => t.id === id);
+  if (!track) return;
+  const display = document.querySelector('.user-note-display');
+  if (!display) return;
+  const ta = document.createElement('textarea');
+  ta.className = 'note-input';
+  ta.value = track.mixing_notes || '';
+  ta.placeholder = '接歌備註...';
+  display.replaceWith(ta);
+  ta.focus();
+  ta.onblur = async () => {
+    const val = ta.value;
+    await sb.from('tracks').update({ mixing_notes: val, updated_at: new Date().toISOString() }).eq('id', id);
+    const idx = tracks.findIndex(t => t.id === id);
+    if (idx !== -1) tracks[idx].mixing_notes = val;
+    const newDisplay = document.createElement('div');
+    newDisplay.className = 'user-note-display';
+    newDisplay.title = '點擊編輯';
+    newDisplay.innerHTML = val || '<span style="color:var(--text3);">點擊新增接歌備註...</span>';
+    newDisplay.onclick = () => editMixingNote(id);
+    ta.replaceWith(newDisplay);
+    showToast('✓ 備註已儲存', 'success');
+  };
+}
+
+// ═══ ADD/EDIT TRACK ═══
+function openAddTrack() {
+  editingTrackId = null;
+  document.getElementById('modal-track-title').textContent = '新增歌曲';
+  ['f-title','f-artist','f-bpm','f-energy','f-capo','f-tags','f-structure','f-chords','f-mixing-notes','f-gn-link'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('f-key').value = '';
+  document.getElementById('f-genre').value = '';
+  document.getElementById('modal-track').style.display = 'flex';
+}
+
+function openEditTrack(id) {
+  const track = tracks.find(t => t.id === id);
+  if (!track) return;
+  editingTrackId = id;
+  document.getElementById('modal-track-title').textContent = '編輯歌曲';
+  document.getElementById('f-title').value = track.title || '';
+  document.getElementById('f-artist').value = track.artist || '';
+  document.getElementById('f-bpm').value = track.bpm || '';
+  document.getElementById('f-key').value = track.camelot_key || '';
+  document.getElementById('f-genre').value = track.genre || '';
+  document.getElementById('f-energy').value = track.energy || '';
+  document.getElementById('f-capo').value = track.capo || '';
+  document.getElementById('f-tags').value = (track.tags||[]).join(', ');
+  document.getElementById('f-structure').value = track.structure || '';
+  document.getElementById('f-chords').value = track.chords || '';
+  document.getElementById('f-mixing-notes').value = track.mixing_notes || '';
+  document.getElementById('f-gn-link').value = track.gn_link || '';
+  document.getElementById('modal-track').style.display = 'flex';
+}
+
+async function saveTrack() {
+  const title = document.getElementById('f-title').value.trim();
+  if (!title) { document.getElementById('f-title').style.borderColor = 'var(--accent3)'; return; }
+
+  const tagsRaw = document.getElementById('f-tags').value;
+  const tags = tagsRaw ? tagsRaw.split(',').map(t=>t.trim()).filter(Boolean) : [];
+
+  const payload = {
+    title,
+    artist: document.getElementById('f-artist').value.trim() || null,
+    bpm: parseInt(document.getElementById('f-bpm').value) || null,
+    camelot_key: document.getElementById('f-key').value || null,
+    genre: document.getElementById('f-genre').value || null,
+    energy: parseInt(document.getElementById('f-energy').value) || null,
+    capo: parseInt(document.getElementById('f-capo').value) || 0,
+    tags,
+    structure: document.getElementById('f-structure').value.trim() || null,
+    chords: document.getElementById('f-chords').value.trim() || null,
+    mixing_notes: document.getElementById('f-mixing-notes').value.trim() || null,
+    gn_link: document.getElementById('f-gn-link').value.trim() || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  let error;
+  if (editingTrackId) {
+    ({ error } = await sb.from('tracks').update(payload).eq('id', editingTrackId));
+  } else {
+    ({ error } = await sb.from('tracks').insert(payload));
+  }
+
+  if (error) { showToast('❌ 儲存失敗：' + error.message, 'error'); return; }
+
+  showToast(editingTrackId ? '✓ 歌曲已更新' : '✓ 歌曲已新增', 'success');
+  closeModal('modal-track');
+  await loadTracks();
+  renderTracks();
+}
+
+async function deleteTrack(id) {
+  if (!confirm('確定刪除這首歌曲？')) return;
+  const { error } = await sb.from('tracks').delete().eq('id', id);
+  if (error) { showToast('❌ 刪除失敗', 'error'); return; }
+  showToast('✓ 已刪除', 'success');
+  await loadTracks();
+  nav('tracks');
+  renderTracks();
+}
+
+// ═══ NOTES ═══
+function renderNotes() {
+  const list = document.getElementById('notes-list');
+  const general = notes.filter(n => n.category !== 'flx4');
+  if (general.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">📝</div><p>還沒有學習筆記！點右上角「+ 新增筆記」開始記錄</p></div>`;
+    return;
+  }
+  list.innerHTML = general.map(n => `
+    <div class="note-card" onclick="openNoteDetail('${n.id}')">
+      <h4>${n.title}</h4>
+      <p>${(n.content||'').slice(0,120)}${(n.content||'').length>120?'...':''}</p>
+      <div class="note-card-footer">
+        <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">${(n.tags||[]).map(t=>`<span class="tag tag-default">${t}</span>`).join('')}</div>
+        <span class="note-date">${new Date(n.created_at).toLocaleDateString('zh-TW')}</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderFLX4Notes() {
+  const list = document.getElementById('flx4-notes-list');
+  const flx4 = notes.filter(n => n.category === 'flx4');
+  if (flx4.length === 0) { list.innerHTML = ''; return; }
+  list.innerHTML = flx4.map(n => `
+    <div class="note-card" onclick="openNoteDetail('${n.id}')">
+      <h4>${n.title}</h4>
+      <p>${(n.content||'').slice(0,100)}${(n.content||'').length>100?'...':''}</p>
+      <div class="note-card-footer">
+        <div style="display:flex;gap:0.35rem;">${(n.tags||[]).map(t=>`<span class="tag tag-default">${t}</span>`).join('')}</div>
+        <div style="display:flex;gap:0.5rem;">
+          <span class="sec-edit" onclick="event.stopPropagation();openEditNote('${n.id}')">✏️ 編輯</span>
+          <span class="sec-edit" style="color:var(--accent3);" onclick="event.stopPropagation();deleteNote('${n.id}')">🗑</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function openNoteDetail(id) {
+  const note = notes.find(n => n.id === id);
+  if (!note) return;
+  // Show in a modal
+  const m = document.createElement('div');
+  m.className = 'modal-overlay';
+  m.style.display = 'flex';
+  m.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <h2>${note.title}</h2>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:1rem;">${(note.tags||[]).map(t=>`<span class="tag tag-default">${t}</span>`).join('')}</div>
+        <div style="font-family:var(--mono);font-size:0.78rem;color:var(--text2);line-height:1.8;white-space:pre-wrap;">${note.content||''}</div>
+        <div style="font-family:var(--mono);font-size:0.62rem;color:var(--text3);margin-top:1rem;">${new Date(note.created_at).toLocaleDateString('zh-TW')}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger btn-sm" onclick="deleteNote('${note.id}');this.closest('.modal-overlay').remove()">🗑 刪除</button>
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">關閉</button>
+        <button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove();openEditNote('${note.id}')">✏️ 編輯</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+}
+
+function openAddNote(category) {
+  editingNoteId = null;
+  noteCategory = category;
+  document.getElementById('modal-note-title').textContent = category === 'flx4' ? '新增 FLX4 筆記' : '新增學習筆記';
+  ['n-title','n-tags','n-content'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('modal-note').style.display = 'flex';
+}
+
+function openEditNote(id) {
+  const note = notes.find(n => n.id === id);
+  if (!note) return;
+  editingNoteId = id;
+  noteCategory = note.category || 'general';
+  document.getElementById('modal-note-title').textContent = '編輯筆記';
+  document.getElementById('n-title').value = note.title || '';
+  document.getElementById('n-tags').value = (note.tags||[]).join(', ');
+  document.getElementById('n-content').value = note.content || '';
+  document.getElementById('modal-note').style.display = 'flex';
+}
+
+async function saveNote() {
+  const title = document.getElementById('n-title').value.trim();
+  if (!title) { document.getElementById('n-title').style.borderColor = 'var(--accent3)'; return; }
+
+  const tagsRaw = document.getElementById('n-tags').value;
+  const tags = tagsRaw ? tagsRaw.split(',').map(t=>t.trim()).filter(Boolean) : [];
+
+  const payload = {
+    title,
+    content: document.getElementById('n-content').value.trim() || null,
+    category: noteCategory,
+    tags,
+    updated_at: new Date().toISOString(),
+  };
+
+  let error;
+  if (editingNoteId) {
+    ({ error } = await sb.from('notes').update(payload).eq('id', editingNoteId));
+  } else {
+    ({ error } = await sb.from('notes').insert(payload));
+  }
+
+  if (error) { showToast('❌ 儲存失敗：' + error.message, 'error'); return; }
+
+  showToast('✓ 筆記已儲存', 'success');
+  closeModal('modal-note');
+  await loadNotes();
+  renderNotes();
+  renderFLX4Notes();
+}
+
+async function deleteNote(id) {
+  if (!confirm('確定刪除這筆筆記？')) return;
+  const { error } = await sb.from('notes').delete().eq('id', id);
+  if (error) { showToast('❌ 刪除失敗', 'error'); return; }
+  showToast('✓ 已刪除', 'success');
+  await loadNotes();
+  renderNotes();
+  renderFLX4Notes();
+}
+
+// ═══ CAMELOT WHEEL ═══
+function buildCamelotWheel() {
+  const svg = document.getElementById('camelot-svg');
+  const cx = 130, cy = 130;
+  const outerR = 115, innerR = 78, centerR = 42;
+  const segments = 12;
+  const angleStep = (2 * Math.PI) / segments;
+  const startAngle = -Math.PI / 2;
+
+  let html = '';
+
+  for (let i = 0; i < segments; i++) {
+    const num = i + 1;
+    const a1 = startAngle + i * angleStep;
+    const a2 = startAngle + (i + 1) * angleStep;
+    const midA = (a1 + a2) / 2;
+
+    // Outer B segment
+    const ox1 = cx + outerR * Math.cos(a1), oy1 = cy + outerR * Math.sin(a1);
+    const ox2 = cx + outerR * Math.cos(a2), oy2 = cy + outerR * Math.sin(a2);
+    const mx1 = cx + innerR * Math.cos(a1), my1 = cy + innerR * Math.sin(a1);
+    const mx2 = cx + innerR * Math.cos(a2), my2 = cy + innerR * Math.sin(a2);
+    const idB = `${num}B`;
+    html += `<path id="cam-${idB}" d="M${mx1},${my1} L${ox1},${oy1} A${outerR},${outerR} 0 0,1 ${ox2},${oy2} L${mx2},${my2} A${innerR},${innerR} 0 0,0 ${mx1},${my1} Z" fill="rgba(232,197,71,0.08)" stroke="#2e2e3e" stroke-width="0.8" onclick="selectWheelKey('${idB}')" style="cursor:pointer;transition:fill 0.15s;">`;
+    const btx = cx + (outerR+innerR)/2 * Math.cos(midA);
+    const bty = cy + (outerR+innerR)/2 * Math.sin(midA);
+    html += `<text x="${btx}" y="${bty-3}" text-anchor="middle" fill="#e8c547" font-family="DM Mono" font-size="8" font-weight="500" pointer-events="none">${idB}</text>`;
+    const bKeyName = CAMELOT.find(c=>c.id===idB)?.key||'';
+    html += `<text x="${btx}" y="${bty+7}" text-anchor="middle" fill="rgba(232,197,71,0.5)" font-family="DM Mono" font-size="6" pointer-events="none">${bKeyName}</text></path>`;
+
+    // Inner A segment
+    const ix1 = cx + innerR * Math.cos(a1), iy1 = cy + innerR * Math.sin(a1);
+    const ix2 = cx + innerR * Math.cos(a2), iy2 = cy + innerR * Math.sin(a2);
+    const cx1 = cx + centerR * Math.cos(a1), cy1_ = cy + centerR * Math.sin(a1);
+    const cx2 = cx + centerR * Math.cos(a2), cy2_ = cy + centerR * Math.sin(a2);
+    const idA = `${num}A`;
+    html += `<path id="cam-${idA}" d="M${cx1},${cy1_} L${ix1},${iy1} A${innerR},${innerR} 0 0,1 ${ix2},${iy2} L${cx2},${cy2_} A${centerR},${centerR} 0 0,0 ${cx1},${cy1_} Z" fill="rgba(78,205,196,0.06)" stroke="#2e2e3e" stroke-width="0.8" onclick="selectWheelKey('${idA}')" style="cursor:pointer;transition:fill 0.15s;">`;
+    const atx = cx + (innerR+centerR)/2 * Math.cos(midA);
+    const aty = cy + (innerR+centerR)/2 * Math.sin(midA);
+    html += `<text x="${atx}" y="${aty-2}" text-anchor="middle" fill="#4ecdc4" font-family="DM Mono" font-size="7.5" font-weight="500" pointer-events="none">${idA}</text>`;
+    const aKeyName = CAMELOT.find(c=>c.id===idA)?.key||'';
+    html += `<text x="${atx}" y="${aty+6}" text-anchor="middle" fill="rgba(78,205,196,0.4)" font-family="DM Mono" font-size="5.5" pointer-events="none">${aKeyName}</text></path>`;
+  }
+
+  // Center
+  html += `<circle cx="${cx}" cy="${cy}" r="${centerR}" fill="#1a1a24" stroke="#2e2e3e" stroke-width="1"/>`;
+  html += `<text x="${cx}" y="${cy-5}" text-anchor="middle" fill="#60607a" font-family="DM Mono" font-size="8">CAMELOT</text>`;
+  html += `<text x="${cx}" y="${cy+7}" text-anchor="middle" fill="#60607a" font-family="DM Mono" font-size="8">WHEEL</text>`;
+
+  svg.innerHTML = html;
+}
+
+function selectWheelKey(id) {
+  selectedWheelKey = id;
+  const compat = getCompat(id);
+
+  // Reset all
+  CAMELOT.forEach(c => {
+    const el = document.getElementById('cam-' + c.id);
+    if (el) el.setAttribute('fill', c.type === 'A' ? 'rgba(78,205,196,0.06)' : 'rgba(232,197,71,0.08)');
+  });
+
+  // Highlight compat
+  compat.forEach(k => {
+    const el = document.getElementById('cam-' + k);
+    if (el) el.setAttribute('fill', k === id ?
+      (k.endsWith('B') ? 'rgba(232,197,71,0.4)' : 'rgba(78,205,196,0.35)') :
+      (k.endsWith('B') ? 'rgba(232,197,71,0.2)' : 'rgba(78,205,196,0.18)'));
+  });
+
+  const keyData = CAMELOT.find(c => c.id === id);
+  document.getElementById('wheel-selected-title').textContent = `${id} — ${keyData?.key || ''} ${id.endsWith('B')?'大調（Major）':'小調（Minor）'}`;
+  document.getElementById('wheel-selected-desc').textContent = `以下是可以和 ${id} 相容接歌的 Key，能量感不會衝突：`;
+
+  const compatData = compat.map(k => {
+    const kd = CAMELOT.find(c => c.id === k);
+    const relation = k === id ? '同 Key（完美）' : k === `${parseInt(id)-1||12}${id.slice(-1)}` || k === `${parseInt(id)+1>12?1:parseInt(id)+1}${id.slice(-1)}` ? '相鄰 Key（和諧）' : '同數字 A↔B（協調）';
+    return `<div class="compat-row">
+      <div class="compat-key ${k.endsWith('B')?'key-B':'key-A'}">${k}</div>
+      <span style="color:var(--text2);">${kd?.key||''}</span>
+      <span style="font-size:0.65rem;color:var(--text3);font-family:var(--mono);">${relation}</span>
+    </div>`;
+  });
+  document.getElementById('compat-list').innerHTML = compatData.join('');
+}
+
+// ═══ MODAL UTILS ═══
+function closeModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.style.display = 'none'; });
+});
+
+// ═══ EXPORT ═══
+function exportData() {
+  const data = { tracks, notes, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `dj-notebook-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  showToast('✓ 備份已下載', 'success');
+}
+
+// ═══ TOAST ═══
+function showToast(msg, type = '') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ═══ START ═══
+initDB();
+</script>
+</body>
+</html>
