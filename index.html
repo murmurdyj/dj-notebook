@@ -424,21 +424,48 @@ textarea.note-input { width: 100%; background: var(--surface); border: 1px solid
   .sidebar { display: none; }
   .app { flex-direction: column; }
   .bottom-nav { display: flex; }
+  .topbar { padding: 0 0.75rem; height: 52px; }
+  .page-title { font-size: 0.88rem; }
+  .search-wrap input { width: 120px; font-size: 0.7rem; }
+  .btn { font-size: 0.72rem; padding: 0.35rem 0.7rem; }
+  .main-scroll { padding: 1rem; }
 }
 
 .bottom-nav {
   display: none;
   background: var(--bg2);
   border-top: 1px solid var(--border);
-  padding: 0.5rem;
-  gap: 0.25rem;
+  padding: 0.6rem 0 0;
+  padding-bottom: env(safe-area-inset-bottom, 12px);
   justify-content: space-around;
+  align-items: flex-start;
   flex-shrink: 0;
 }
 
-.bottom-nav .nav-item { flex-direction: column; gap: 0.15rem; font-size: 0.9rem; height: auto; padding: 0.35rem 0; width: 52px; }
-.bottom-nav .nav-item span { font-size: 0.55rem; font-family: var(--mono); color: var(--text3); }
-.bottom-nav .nav-item.active span { color: var(--accent); }
+.bottom-nav .nav-item {
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 1.3rem;
+  height: auto;
+  padding: 0.2rem 0.5rem;
+  width: auto;
+  flex: 1;
+  border-radius: 0;
+  background: none;
+}
+
+.bottom-nav .nav-item::before { display: none; }
+
+.bottom-nav .nav-item span.nav-label {
+  font-size: 0.58rem;
+  font-family: var(--mono);
+  color: var(--text3);
+  line-height: 1;
+}
+
+.bottom-nav .nav-item.active span.nav-label { color: var(--accent); }
+.bottom-nav .nav-item.active { color: var(--accent); background: none; }
 
 /* ── ANALYSIS FLOW ── */
 .analysis-flow { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.75rem; }
@@ -592,11 +619,12 @@ textarea.note-input { width: 100%; background: var(--surface); border: 1px solid
 
   <!-- BOTTOM NAV (mobile) -->
   <div class="bottom-nav">
-    <div class="nav-item active" onclick="nav('tracks')"><span>🎵</span><span>歌曲庫</span></div>
-    <div class="nav-item" onclick="nav('notes')"><span>📝</span><span>筆記</span></div>
-    <div class="nav-item" onclick="nav('theory')"><span>🎯</span><span>樂理</span></div>
-    <div class="nav-item" onclick="nav('flx4')"><span>🎛</span><span>FLX4</span></div>
-    <div class="nav-item" onclick="nav('tools')"><span>🔗</span><span>工具</span></div>
+    <div class="nav-item active" onclick="nav('tracks')" id="bnav-tracks"><span>🎵</span><span class="nav-label">歌曲庫</span></div>
+    <div class="nav-item" onclick="nav('notes')" id="bnav-notes"><span>📝</span><span class="nav-label">筆記</span></div>
+    <div class="nav-item" onclick="nav('theory')" id="bnav-theory"><span>🎯</span><span class="nav-label">樂理</span></div>
+    <div class="nav-item" onclick="nav('flx4')" id="bnav-flx4"><span>🎛</span><span class="nav-label">FLX4</span></div>
+    <div class="nav-item" onclick="nav('tools')" id="bnav-tools"><span>🔗</span><span class="nav-label">工具</span></div>
+    <div class="nav-item" onclick="showBackupMenu()"><span>💾</span><span class="nav-label">備份</span></div>
   </div>
 </div>
 
@@ -823,10 +851,10 @@ function nav(panel) {
   document.getElementById('nav-' + panel)?.classList.add('active');
 
   // Update mobile nav
-  document.querySelectorAll('.bottom-nav .nav-item').forEach((n, i) => {
-    const panels = ['tracks','notes','theory','flx4','tools'];
-    if (panels[i] === panel) n.classList.add('active');
-    else n.classList.remove('active');
+  const panels = ['tracks','notes','theory','flx4','tools'];
+  panels.forEach(p => {
+    const el = document.getElementById('bnav-' + p);
+    if (el) el.classList.toggle('active', p === panel);
   });
 
   // Topbar
@@ -1345,6 +1373,22 @@ function closeModal(id) {
 document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.style.display = 'none'; });
 });
+
+function showBackupMenu() {
+  const m = document.createElement('div');
+  m.className = 'modal-overlay';
+  m.style.display = 'flex';
+  m.innerHTML = `
+    <div class="modal" style="max-width:320px;">
+      <div class="modal-header"><h2>💾 備份</h2><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:0.75rem;">
+        <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="exportData();this.closest('.modal-overlay').remove()">📥 匯出備份 JSON</button>
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;" onclick="importData();this.closest('.modal-overlay').remove()">📤 匯入備份 JSON</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+}
 
 // ═══ EXPORT / IMPORT ═══
 function exportData() {
