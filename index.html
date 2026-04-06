@@ -790,9 +790,27 @@ tags 建議包含：地區風格（K-Pop/T-Pop/華語等）、情境（開場曲
     });
 
     const data = await response.json();
+    console.log('AI response:', JSON.stringify(data));
+    
+    if (data.error) {
+      throw new Error(data.error.message || 'API error');
+    }
+    
     const text = data.content?.[0]?.text || '';
-    const clean = text.replace(/```json|```/g, '').trim();
-    const result = JSON.parse(clean);
+    console.log('AI text:', text);
+    
+    if (!text) throw new Error('Empty response');
+    
+    const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    let result;
+    try {
+      result = JSON.parse(clean);
+    } catch(parseErr) {
+      // Try to extract JSON from text
+      const match = clean.match(/\{[\s\S]*\}/);
+      if (match) result = JSON.parse(match[0]);
+      else throw new Error('Cannot parse JSON: ' + clean);
+    }
 
     // Fill in the form
     if (result.genre) {
