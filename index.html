@@ -576,6 +576,29 @@ textarea.note-input { width: 100%; background: var(--surface); border: 1px solid
 
       <!-- ═══ TOOLS PANEL ═══ -->
       <div class="panel" id="panel-tools">
+
+        <!-- AI 使用量 -->
+        <p style="font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;color:var(--text3);text-transform:uppercase;margin-bottom:0.9rem;">✦ AI 使用量</p>
+        <div style="background:var(--card);border:1px solid rgba(155,138,251,0.2);border-radius:var(--r);padding:1.1rem;margin-bottom:1.5rem;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:0.75rem;">
+            <div>
+              <div style="font-family:var(--mono);font-size:0.68rem;color:var(--text3);margin-bottom:0.2rem;">已分析歌曲</div>
+              <div style="font-family:var(--mono);font-size:1.4rem;font-weight:700;color:var(--purple);" id="ai-count">0</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-family:var(--mono);font-size:0.68rem;color:var(--text3);margin-bottom:0.2rem;">估計消耗</div>
+              <div style="font-family:var(--mono);font-size:0.85rem;color:var(--text2);" id="ai-cost">$0.00</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-family:var(--mono);font-size:0.68rem;color:var(--text3);margin-bottom:0.2rem;">預算</div>
+              <div style="font-family:var(--mono);font-size:0.85rem;color:var(--text2);">$5.00</div>
+            </div>
+          </div>
+          <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:0.5rem;">
+            <div id="ai-usage-bar" style="height:100%;background:var(--purple);border-radius:3px;width:0%;transition:width 0.5s ease;"></div>
+          </div>
+          <div style="font-family:var(--mono);font-size:0.62rem;color:var(--text3);" id="ai-usage-pct">0% 已使用 · 每次分析約 $0.003</div>
+        </div>
         <p style="font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;color:var(--text3);text-transform:uppercase;margin-bottom:0.9rem;">BPM / Key 分析流程</p>
         <div class="analysis-flow">
           <div class="flow-step step-1">
@@ -749,7 +772,35 @@ function getCompat(id) {
   return [id, `${prev}${letter}`, `${next}${letter}`, `${num}${other}`];
 }
 
-// ═══ AI ANALYZE ═══
+// ═══ AI USAGE TRACKING ═══
+function trackAiUsage() {
+  const count = parseInt(localStorage.getItem('ai-analysis-count') || '0') + 1;
+  localStorage.setItem('ai-analysis-count', count);
+  renderAiUsage();
+}
+
+function renderAiUsage() {
+  const count = parseInt(localStorage.getItem('ai-analysis-count') || '0');
+  const costPerAnalysis = 0.003;
+  const budget = 5.00;
+  const cost = count * costPerAnalysis;
+  const pct = Math.min((cost / budget) * 100, 100);
+
+  const countEl = document.getElementById('ai-count');
+  const costEl = document.getElementById('ai-cost');
+  const barEl = document.getElementById('ai-usage-bar');
+  const pctEl = document.getElementById('ai-usage-pct');
+
+  if (countEl) countEl.textContent = count;
+  if (costEl) costEl.textContent = '$' + cost.toFixed(3);
+  if (barEl) {
+    barEl.style.width = pct + '%';
+    barEl.style.background = pct > 80 ? 'var(--accent3)' : pct > 50 ? 'var(--accent)' : 'var(--purple)';
+  }
+  if (pctEl) pctEl.textContent = pct.toFixed(1) + '% 已使用 · 每次分析約 $0.003';
+}
+
+
 async function aiAnalyzeTrack() {
   const title = document.getElementById('f-title').value.trim();
   const artist = document.getElementById('f-artist').value.trim();
@@ -840,6 +891,7 @@ tags 建議包含：地區風格（K-Pop/T-Pop/華語等）、情境（開場曲
     preview.innerHTML = `<span style="color:var(--purple);">✦ AI 已填入</span> — Genre: <strong style="color:var(--text);">${result.genre}</strong> · Energy: <strong style="color:var(--text);">${result.energy}/10</strong> · 標籤: <strong style="color:var(--text);">${(result.tags||[]).join(', ')}</strong>`;
 
     showToast('✓ AI 分析完成', 'success');
+    trackAiUsage();
   } catch(e) {
     showToast('❌ AI 分析失敗，請手動填寫', 'error');
     preview.style.display = 'none';
@@ -932,6 +984,7 @@ async function loadAll() {
   renderNotes();
   renderFLX4Notes();
   buildCamelotWheel();
+  renderAiUsage();
 }
 
 async function loadTracks() {
