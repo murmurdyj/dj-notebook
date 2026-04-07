@@ -2028,8 +2028,16 @@ function renderTagManager() {
   makeDropZone(unclassifiedEl, null);
   unclassified.forEach(tag => {
     const el = document.createElement('span');
-    el.textContent = tag;
-    el.style.cssText = `display:inline-flex;align-items:center;padding:0.15rem 0.55rem;border-radius:4px;font-family:var(--mono);font-size:0.65rem;background:rgba(255,255,255,0.05);color:var(--text2);border:1px solid var(--border);cursor:grab;user-select:none;`;
+    el.style.cssText = `display:inline-flex;align-items:center;gap:4px;padding:0.15rem 0.55rem;border-radius:4px;font-family:var(--mono);font-size:0.65rem;background:rgba(255,255,255,0.05);color:var(--text2);border:1px solid var(--border);cursor:grab;user-select:none;`;
+    const txt = document.createTextNode(tag);
+    const delBtn = document.createElement('span');
+    delBtn.textContent = '✕';
+    delBtn.style.cssText = `cursor:pointer;opacity:0.5;font-size:0.6rem;`;
+    delBtn.onmouseover = () => { delBtn.style.opacity='1'; delBtn.style.color='var(--accent3)'; };
+    delBtn.onmouseout = () => { delBtn.style.opacity='0.5'; delBtn.style.color=''; };
+    delBtn.onclick = e => { e.stopPropagation(); deleteUnclassifiedTag(tag); };
+    el.appendChild(txt);
+    el.appendChild(delBtn);
     makeDraggable(el, tag, null);
     unclassifiedEl.appendChild(el);
   });
@@ -2105,6 +2113,18 @@ async function removeTagFromGroup(groupId, tag) {
   await sb.from('tag_groups').update({ tags: updatedTags }).eq('id', groupId);
   await loadTagGroups();
   renderTagManager();
+}
+
+async function deleteUnclassifiedTag(tag) {
+  if (!confirm(`確定刪除標籤「${tag}」？這會從所有歌曲上移除這個標籤。`)) return;
+  const affectedTracks = tracks.filter(t => (t.tags||[]).includes(tag));
+  for (const t of affectedTracks) {
+    const updatedTags = (t.tags||[]).filter(tg => tg !== tag);
+    await sb.from('tracks').update({ tags: updatedTags }).eq('id', t.id);
+  }
+  await loadTracks();
+  renderTagManager();
+  showToast(`✓ 標籤「${tag}」已刪除`, 'success');
 }
 
 async function addTagGroup() {
