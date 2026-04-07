@@ -739,7 +739,13 @@ textarea.note-input { width: 100%; background: var(--surface); border: 1px solid
         </div>
 
         <p style="font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;color:var(--text3);text-transform:uppercase;margin:1.5rem 0 0.9rem;">🏷 標籤管理</p>
-        <div id="tag-manager-list"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:0.75rem;">
+          <div>
+            <p style="font-family:var(--mono);font-size:0.6rem;color:var(--text3);margin-bottom:0.5rem;">未分類標籤 — 拖拉到右側群組</p>
+            <div id="unclassified-tags" style="min-height:60px;background:var(--surface);border:1px dashed var(--border2);border-radius:var(--rs);padding:0.6rem;display:flex;flex-wrap:wrap;gap:0.4rem;"></div>
+          </div>
+          <div id="tag-manager-list"></div>
+        </div>
         <div style="display:flex;gap:0.75rem;margin-top:0.75rem;">
           <input type="text" id="new-group-name" placeholder="新增群組名稱..." style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:var(--mono);font-size:0.8rem;padding:0.5rem 0.8rem;outline:none;">
           <button class="btn btn-ghost" onclick="addTagGroup()">+ 新增群組</button>
@@ -1910,34 +1916,172 @@ function getTagGroupColor(groupName) {
   return { bg: 'rgba(255,255,255,0.05)', color: 'var(--text2)', border: 'var(--border)' };
 }
 
+// drag state
+let dragTag = null;
+let dragFromGroupId = null; // null = unclassified
+
+function makeDraggable(el, tag, fromGroupId) {
+  // Mouse drag
+  el.draggable = true;
+  el.addEventListener('dragstart', e => {
+    dragTag = tag;
+    dragFromGroupId = fromGroupId;
+    el.style.opacity = '0.5';
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  el.addEventListener('dragend', () => { el.style.opacity = '1'; });
+
+  // Touch drag
+  let touchClone = null;
+  el.addEventListener('touchstart', e => {
+    dragTag = tag;
+    dragFromGroupId = fromGroupId;
+    const t = e.touches[0];
+    touchClone = el.cloneNode(true);
+    touchClone.style.cssText = `position:fixed;opacity:0.8;pointer-events:none;z-index:9999;font-size:0.65rem;padding:0.15rem 0.55rem;border-radius:4px;`;
+    touchClone.style.left = t.clientX - 20 + 'px';
+    touchClone.style.top = t.clientY - 15 + 'px';
+    document.body.appendChild(touchClone);
+  }, { passive: true });
+  el.addEventListener('touchmove', e => {
+    e.preventDefault();
+    const t = e.touches[0];
+    if (touchClone) {
+      touchClone.style.left = t.clientX - 20 + 'px';
+      touchClone.style.top = t.clientY - 15 + 'px';
+    }
+    // Find drop target
+    document.querySelectorAll('.tag-drop-zone').forEach(z => z.classList.remove('drag-over'));
+    const el2 = document.elementFromPoint(t.clientX, t.clientY);
+    const zone = el2?.closest('.tag-drop-zone');
+    if (zone) zone.classList.add('drag-over');
+  }, { passive: false });
+  el.addEventListener('touchend', e => {
+    if (touchClone) { touchClone.remove(); touchClone = null; }
+    document.querySelectorAll('.tag-drop-zone').forEach(z => z.classList.remove('drag-over'));
+    const t = e.changedTouches[0];
+    const target = document.elementFromPoint(t.clientX, t.clientY);
+    const zone = target?.closest('.tag-drop-zone');
+    if (zone && dragTag) {
+      const toGroupId = zone.dataset.groupId || null;
+      dropTagToGroup(toGroupId);
+    }
+    dragTag = null;
+    dragFromGroupId = null;
+  });
+}
+
+function makeDropZone(el, groupId) {
+  el.classList.add('tag-drop-zone');
+  el.dataset.groupId = groupId || '';
+  el.addEventListener('dragover', e => { e.preventDefault(); el.style.borderColor = 'var(--accent2)'; });
+  el.addEventListener('dragleave', () => { el.style.borderColor = ''; });
+  el.addEventListener('drop', e => {
+    e.preventDefault();
+    el.style.borderColor = '';
+    dropTagToGroup(groupId);
+  });
+}
+
+async function dropTagToGroup(toGroupId) {
+  if (!dragTag) return;
+  if (toGroupId === dragFromGroupId) return;
+
+  // Remove from old group
+  if (dragFromGroupId) {
+    const oldGroup = tagGroups.find(g => g.id === dragFromGroupId);
+    if (oldGroup) {
+      const updatedTags = (oldGroup.tags || []).filter(t => t !== dragTag);
+      await sb.from('tag_groups').update({ tags: updatedTags }).eq('id', dragFromGroupId);
+    }
+  }
+
+  // Add to new group
+  if (toGroupId) {
+    const newGroup = tagGroups.find(g => g.id === toGroupId);
+    if (newGroup && !(newGroup.tags || []).includes(dragTag)) {
+      const updatedTags = [...(newGroup.tags || []), dragTag];
+      await sb.from('tag_groups').update({ tags: updatedTags }).eq('id', toGroupId);
+    }
+  }
+
+  dragTag = null;
+  dragFromGroupId = null;
+  await loadTagGroups();
+  renderTagManager();
+}
+
 function renderTagManager() {
   const list = document.getElementById('tag-manager-list');
-  if (!list) return;
+  const unclassifiedEl = document.getElementById('unclassified-tags');
+  if (!list || !unclassifiedEl) return;
+
+  // All tags from tracks
+  const allTrackTags = [...new Set(tracks.flatMap(t => t.tags || []))];
+  const allGroupTags = tagGroups.flatMap(g => g.tags || []);
+  const unclassified = allTrackTags.filter(t => !allGroupTags.includes(t));
+
+  // Render unclassified
+  unclassifiedEl.innerHTML = unclassified.length === 0
+    ? `<span style="font-family:var(--mono);font-size:0.68rem;color:var(--text3);">所有標籤已分類 ✓</span>`
+    : '';
+  makeDropZone(unclassifiedEl, null);
+  unclassified.forEach(tag => {
+    const el = document.createElement('span');
+    el.textContent = tag;
+    el.style.cssText = `display:inline-flex;align-items:center;padding:0.15rem 0.55rem;border-radius:4px;font-family:var(--mono);font-size:0.65rem;background:rgba(255,255,255,0.05);color:var(--text2);border:1px solid var(--border);cursor:grab;user-select:none;`;
+    makeDraggable(el, tag, null);
+    unclassifiedEl.appendChild(el);
+  });
+
+  // Render groups
   if (!tagGroups || tagGroups.length === 0) {
-    list.innerHTML = `<div style="font-family:var(--mono);font-size:0.75rem;color:var(--text3);padding:0.5rem 0;">載入中...</div>`;
+    list.innerHTML = `<div style="font-family:var(--mono);font-size:0.75rem;color:var(--text3);">還沒有群組，在下方新增</div>`;
     return;
   }
-  list.innerHTML = tagGroups.map(g => {
+
+  list.innerHTML = '';
+  tagGroups.forEach(g => {
     const c = getTagGroupColor(g.group_name);
-    const tags = (g.tags || []).map(tag => `
-      <span style="display:inline-flex;align-items:center;gap:4px;padding:0.15rem 0.55rem;border-radius:4px;font-family:var(--mono);font-size:0.65rem;background:${c.bg};color:${c.color};border:1px solid ${c.border};">
-        ${tag}
-        <span onclick="removeTagFromGroup('${g.id}','${tag}')" style="cursor:pointer;opacity:0.6;font-size:0.6rem;margin-left:2px;" onmouseover="this.style.opacity=1;this.style.color='var(--accent3)'" onmouseout="this.style.opacity=0.6;this.style.color=''">✕</span>
-      </span>`).join('');
-    return `
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:0.9rem;margin-bottom:0.6rem;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
-          <span style="font-family:var(--mono);font-size:0.72rem;font-weight:500;color:${c.color};">${g.group_name}</span>
-          <span onclick="deleteTagGroup('${g.id}')" style="font-family:var(--mono);font-size:0.62rem;color:var(--text3);cursor:pointer;" onmouseover="this.style.color='var(--accent3)'" onmouseout="this.style.color='var(--text3)'">🗑 刪除群組</span>
-        </div>
-        <div style="display:flex;gap:0.35rem;flex-wrap:wrap;margin-bottom:0.6rem;">${tags || '<span style="font-family:var(--mono);font-size:0.68rem;color:var(--text3);">還沒有標籤</span>'}</div>
-        <div style="display:flex;gap:0.5rem;">
-          <input type="text" id="new-tag-${g.id}" placeholder="新增標籤..." style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:var(--mono);font-size:0.75rem;padding:0.35rem 0.7rem;outline:none;">
-          <button class="btn btn-ghost btn-sm" onclick="addTagToGroup('${g.id}')">+ 新增</button>
-        </div>
-      </div>`;
-  }).join('');
+    const groupEl = document.createElement('div');
+    groupEl.style.cssText = `background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:0.9rem;margin-bottom:0.6rem;`;
+
+    const header = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+      <span style="font-family:var(--mono);font-size:0.72rem;font-weight:500;color:${c.color};">${g.group_name}</span>
+      <span onclick="deleteTagGroup('${g.id}')" style="font-family:var(--mono);font-size:0.62rem;color:var(--text3);cursor:pointer;" onmouseover="this.style.color='var(--accent3)'" onmouseout="this.style.color='var(--text3)'">🗑</span>
+    </div>`;
+
+    const dropZoneEl = document.createElement('div');
+    dropZoneEl.style.cssText = `display:flex;gap:0.35rem;flex-wrap:wrap;min-height:32px;padding:0.4rem;border-radius:var(--rs);border:1px dashed transparent;margin-bottom:0.5rem;transition:border-color 0.15s;`;
+    makeDropZone(dropZoneEl, g.id);
+
+    (g.tags || []).forEach(tag => {
+      const tagEl = document.createElement('span');
+      tagEl.style.cssText = `display:inline-flex;align-items:center;gap:4px;padding:0.15rem 0.55rem;border-radius:4px;font-family:var(--mono);font-size:0.65rem;background:${c.bg};color:${c.color};border:1px solid ${c.border};cursor:grab;user-select:none;`;
+      tagEl.innerHTML = `${tag}<span onclick="removeTagFromGroup('${g.id}','${tag}')" style="cursor:pointer;opacity:0.6;font-size:0.6rem;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">✕</span>`;
+      makeDraggable(tagEl, tag, g.id);
+      dropZoneEl.appendChild(tagEl);
+    });
+
+    if ((g.tags || []).length === 0) {
+      dropZoneEl.innerHTML = `<span style="font-family:var(--mono);font-size:0.65rem;color:var(--text3);">拖拉標籤到這裡</span>`;
+    }
+
+    const addRow = `<div style="display:flex;gap:0.5rem;">
+      <input type="text" id="new-tag-${g.id}" placeholder="直接輸入新增..." style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:var(--mono);font-size:0.72rem;padding:0.3rem 0.6rem;outline:none;">
+      <button class="btn btn-ghost btn-sm" onclick="addTagToGroup('${g.id}')">+</button>
+    </div>`;
+
+    groupEl.innerHTML = header + addRow;
+    groupEl.insertBefore(dropZoneEl, groupEl.querySelector('div:last-child'));
+    list.appendChild(groupEl);
+  });
 }
+
+// Add drag-over style
+const dragStyle = document.createElement('style');
+dragStyle.textContent = `.tag-drop-zone.drag-over { border-color: var(--accent2) !important; background: rgba(78,205,196,0.05); }`;
+document.head.appendChild(dragStyle);
 
 async function addTagToGroup(groupId) {
   const input = document.getElementById('new-tag-' + groupId);
