@@ -311,7 +311,90 @@ textarea.note-input { width: 100%; background: var(--surface); border: 1px solid
 .gn-btn { padding: 0.45rem 1rem; background: rgba(155,138,251,0.1); border: 1px solid rgba(155,138,251,0.25); border-radius: var(--rs); color: var(--purple); font-family: var(--mono); font-size: 0.7rem; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-block; }
 .gn-btn:hover { background: rgba(155,138,251,0.2); }
 
-/* ── NOTES PANEL ── */
+/* ── TAG GROUPS ── */
+.tag-groups { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
+.tag-group-row { display: flex; align-items: flex-start; gap: 0.6rem; flex-wrap: wrap; }
+.tag-group-label { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.1em; color: var(--text3); text-transform: uppercase; min-width: 38px; padding-top: 0.3rem; flex-shrink: 0; }
+.tag-group-chips { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+
+.chip { padding: 0.25rem 0.75rem; border-radius: 20px; font-family: var(--mono); font-size: 0.68rem; cursor: pointer; border: 1px solid; transition: all 0.15s; }
+.chip-all { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 500; }
+.chip-all.inactive { background: transparent; color: var(--text2); border-color: var(--border); }
+.chip-context { background: rgba(99,153,34,0.1); color: #8bc34a; border-color: rgba(99,153,34,0.25); }
+.chip-context.active { background: rgba(99,153,34,0.3); border-color: #8bc34a; }
+.chip-region { background: rgba(56,141,220,0.1); color: #64b5f6; border-color: rgba(56,141,220,0.25); }
+.chip-region.active { background: rgba(56,141,220,0.3); border-color: #64b5f6; }
+.chip-energy { background: rgba(255,107,107,0.1); color: var(--accent3); border-color: rgba(255,107,107,0.25); }
+.chip-energy.active { background: rgba(255,107,107,0.3); border-color: var(--accent3); }
+.chip-genre { background: rgba(155,138,251,0.1); color: var(--purple); border-color: rgba(155,138,251,0.25); }
+.chip-genre.active { background: rgba(155,138,251,0.3); border-color: var(--purple); }
+.chip-artist { background: rgba(232,197,71,0.1); color: var(--accent); border-color: rgba(232,197,71,0.25); }
+.chip-artist.active { background: rgba(232,197,71,0.3); border-color: var(--accent); }
+.chip-other { background: rgba(255,255,255,0.04); color: var(--text2); border-color: var(--border); }
+.chip-other.active { background: rgba(255,255,255,0.1); border-color: var(--border2); }
+
+/* Sort row */
+.sort-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+.sort-label { font-family: var(--mono); font-size: 0.62rem; color: var(--text3); }
+.sort-btn { padding: 0.2rem 0.65rem; border-radius: 5px; font-family: var(--mono); font-size: 0.65rem; border: 1px solid var(--border); background: transparent; color: var(--text3); cursor: pointer; transition: all 0.15s; }
+.sort-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(232,197,71,0.08); }
+.sort-btn:hover:not(.active) { color: var(--text2); border-color: var(--border2); }
+
+/* Tag colors on cards */
+.tag-context { background: rgba(99,153,34,0.12); color: #8bc34a; }
+.tag-region { background: rgba(56,141,220,0.12); color: #64b5f6; }
+.tag-energy { background: rgba(255,107,107,0.12); color: var(--accent3); }
+.tag-genre { background: rgba(155,138,251,0.12); color: var(--purple); }
+.tag-artist { background: rgba(232,197,71,0.1); color: var(--accent); }
+.tag-other { background: rgba(255,255,255,0.05); color: var(--text3); }
+
+/* ── QUICK NOTES PANEL ── */
+.qn-section-title { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.15em; color: var(--text3); text-transform: uppercase; margin-bottom: 0.75rem; }
+.qn-add-row { display: flex; gap: 0.5rem; margin-bottom: 0.9rem; }
+.qn-input { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--rs); color: var(--text); font-family: var(--mono); font-size: 0.8rem; padding: 0.5rem 0.8rem; outline: none; transition: border-color 0.2s; }
+.qn-input:focus { border-color: var(--accent2); }
+.qn-btn { padding: 0.5rem 0.9rem; background: var(--accent2); color: #000; border: none; border-radius: var(--rs); font-family: var(--mono); font-size: 0.72rem; font-weight: 500; cursor: pointer; white-space: nowrap; }
+
+.pending-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
+.pending-item { background: var(--card); border: 1px solid var(--border); border-radius: var(--rs); padding: 0.7rem 0.9rem; display: flex; align-items: center; gap: 0.75rem; }
+.pending-check { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--border2); flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.pending-check.done { background: var(--accent2); border-color: var(--accent2); color: #000; font-size: 0.65rem; }
+.pending-info { flex: 1; min-width: 0; }
+.pending-title { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+.pending-title.done { text-decoration: line-through; color: var(--text3); }
+.pending-artist { font-family: var(--mono); font-size: 0.68rem; color: var(--text3); }
+.pending-actions { display: flex; gap: 0.4rem; align-items: center; flex-shrink: 0; }
+.to-lib-btn { font-family: var(--mono); font-size: 0.62rem; color: var(--accent2); cursor: pointer; padding: 0.15rem 0.5rem; border: 1px solid rgba(78,205,196,0.3); border-radius: 4px; white-space: nowrap; transition: all 0.15s; }
+.to-lib-btn:hover { background: rgba(78,205,196,0.1); }
+.del-pending { font-family: var(--mono); font-size: 0.65rem; color: var(--text3); cursor: pointer; padding: 0.1rem 0.3rem; transition: color 0.15s; }
+.del-pending:hover { color: var(--accent3); }
+
+.qn-divider { height: 1px; background: var(--border); margin: 1.25rem 0; }
+
+.quick-notes-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.qn-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--rs); padding: 0.8rem 0.9rem; }
+.qn-text { font-size: 0.82rem; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
+.qn-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; }
+.qn-time { font-family: var(--mono); font-size: 0.62rem; color: var(--text3); }
+.qn-del { font-family: var(--mono); font-size: 0.62rem; color: var(--text3); cursor: pointer; transition: color 0.15s; }
+.qn-del:hover { color: var(--accent3); }
+
+/* ── TAG MANAGER ── */
+.tag-manager { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 1.1rem; margin-bottom: 1.5rem; }
+.tag-manager-group { margin-bottom: 1rem; }
+.tag-manager-group:last-child { margin-bottom: 0; }
+.tmg-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+.tmg-name { font-family: var(--mono); font-size: 0.7rem; font-weight: 500; }
+.tmg-tags { display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center; }
+.tmg-tag { padding: 0.15rem 0.55rem; border-radius: 4px; font-family: var(--mono); font-size: 0.65rem; display: flex; align-items: center; gap: 0.3rem; }
+.tmg-tag-del { cursor: pointer; opacity: 0.6; font-size: 0.6rem; }
+.tmg-tag-del:hover { opacity: 1; color: var(--accent3); }
+.tmg-add { font-family: var(--mono); font-size: 0.65rem; color: var(--text3); cursor: pointer; border: 1px dashed var(--border2); padding: 0.15rem 0.5rem; border-radius: 4px; transition: all 0.15s; }
+.tmg-add:hover { color: var(--text); border-color: var(--border2); }
+
+/* AI usage bar */
+.ai-usage-block { background: linear-gradient(135deg, rgba(155,138,251,0.04), rgba(78,205,196,0.04)); border: 1px solid rgba(155,138,251,0.18); border-radius: var(--r); padding: 1.1rem; margin-bottom: 1.5rem; }
+
 .notes-list { display: flex; flex-direction: column; gap: 0.75rem; }
 .note-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 1.1rem; cursor: pointer; transition: all 0.2s; }
 .note-card:hover { border-color: var(--border2); }
@@ -487,6 +570,7 @@ textarea.note-input { width: 100%; background: var(--surface); border: 1px solid
   <nav class="sidebar" id="sidebar">
     <div class="logo-mark">🎵</div>
     <div class="nav-item active" onclick="nav('tracks')" id="nav-tracks"><span>🎵</span><span class="nav-tooltip">歌曲庫</span></div>
+    <div class="nav-item" onclick="nav('quicknotes')" id="nav-quicknotes"><span>✍️</span><span class="nav-tooltip">隨手筆記</span></div>
     <div class="nav-item" onclick="nav('notes')" id="nav-notes"><span>📝</span><span class="nav-tooltip">學習筆記</span></div>
     <div class="nav-item" onclick="nav('theory')" id="nav-theory"><span>🎯</span><span class="nav-tooltip">樂理速查</span></div>
     <div class="nav-item" onclick="nav('flx4')" id="nav-flx4"><span>🎛</span><span class="nav-tooltip">FLX4 設備</span></div>
@@ -521,6 +605,26 @@ textarea.note-input { width: 100%; background: var(--surface); border: 1px solid
           <div class="track-grid" id="track-grid"></div>
         </div>
         <div id="track-detail-view" style="display:none;"></div>
+      </div>
+
+      <!-- ═══ QUICK NOTES PANEL ═══ -->
+      <div class="panel" id="panel-quicknotes">
+        <p class="qn-section-title">待分析清單</p>
+        <div class="qn-add-row">
+          <input type="text" class="qn-input" id="pt-title" placeholder="歌名">
+          <input type="text" class="qn-input" id="pt-artist" placeholder="歌手" style="max-width:140px;">
+          <button class="qn-btn" onclick="addPendingTrack()">加入</button>
+        </div>
+        <div class="pending-list" id="pending-list"></div>
+
+        <div class="qn-divider"></div>
+
+        <p class="qn-section-title">隨手記錄</p>
+        <div class="qn-add-row">
+          <textarea class="qn-input" id="qn-content" placeholder="記下靈感、問題、想法..." rows="2" style="resize:none;"></textarea>
+          <button class="qn-btn" onclick="addQuickNote()" style="align-self:flex-end;">記下</button>
+        </div>
+        <div class="quick-notes-list" id="quick-notes-list"></div>
       </div>
 
       <!-- ═══ NOTES PANEL ═══ -->
@@ -627,6 +731,12 @@ textarea.note-input { width: 100%; background: var(--surface); border: 1px solid
           <a href="https://www.pioneerdj.com/en/support/software/rekordbox/" target="_blank" class="ext-link"><div class="ext-icon" style="background:rgba(255,255,255,0.05);">🎛</div><div class="ext-text"><h4>Pioneer DJ</h4><p>FLX4 官方資源</p></div></a>
           <a href="https://genius.com" target="_blank" class="ext-link"><div class="ext-icon" style="background:rgba(255,183,0,0.1);">📜</div><div class="ext-text"><h4>Genius</h4><p>歌詞查詢</p></div></a>
         </div>
+
+        <p style="font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;color:var(--text3);text-transform:uppercase;margin:1.5rem 0 0.9rem;">備份管理</p>
+        <div style="display:flex;gap:0.75rem;">
+          <button class="btn btn-ghost" onclick="exportData()" style="flex:1;">📥 匯出備份</button>
+          <button class="btn btn-ghost" onclick="importData()" style="flex:1;">📤 匯入備份</button>
+        </div>
       </div>
 
     </div>
@@ -643,11 +753,11 @@ textarea.note-input { width: 100%; background: var(--surface); border: 1px solid
   <!-- BOTTOM NAV (mobile) -->
   <div class="bottom-nav">
     <div class="nav-item active" onclick="nav('tracks')" id="bnav-tracks"><span>🎵</span><span class="nav-label">歌曲庫</span></div>
+    <div class="nav-item" onclick="nav('quicknotes')" id="bnav-quicknotes"><span>✍️</span><span class="nav-label">隨手</span></div>
     <div class="nav-item" onclick="nav('notes')" id="bnav-notes"><span>📝</span><span class="nav-label">筆記</span></div>
     <div class="nav-item" onclick="nav('theory')" id="bnav-theory"><span>🎯</span><span class="nav-label">樂理</span></div>
     <div class="nav-item" onclick="nav('flx4')" id="bnav-flx4"><span>🎛</span><span class="nav-label">FLX4</span></div>
     <div class="nav-item" onclick="nav('tools')" id="bnav-tools"><span>🔗</span><span class="nav-label">工具</span></div>
-    <div class="nav-item" onclick="showBackupMenu()"><span>💾</span><span class="nav-label">備份</span></div>
   </div>
 </div>
 
@@ -740,12 +850,18 @@ const sb = createClient(
 // ═══ STATE ═══
 let tracks = [];
 let notes = [];
+let pendingTracks = [];
+let quickNotes = [];
+let tagGroups = [];
 let currentPanel = 'tracks';
 let editingTrackId = null;
 let editingNoteId = null;
 let noteCategory = 'general';
-let activeFilter = 'all';
+let activeFilters = { group: 'all', tag: null };
+let sortMode = 'newest';
 let selectedWheelKey = null;
+let trackPage = 0;
+const TRACKS_PER_PAGE = 20;
 
 // ═══ CAMELOT DATA ═══
 const CAMELOT = [
@@ -772,15 +888,110 @@ function getCompat(id) {
   return [id, `${prev}${letter}`, `${next}${letter}`, `${num}${other}`];
 }
 
-// ═══ AI USAGE TRACKING ═══
-function trackAiUsage() {
-  const count = parseInt(localStorage.getItem('ai-analysis-count') || '0') + 1;
-  localStorage.setItem('ai-analysis-count', count);
+// ═══ QUICK NOTES ═══
+function renderQuickNotes() {
+  const list = document.getElementById('quick-notes-list');
+  if (!list) return;
+  if (quickNotes.length === 0) {
+    list.innerHTML = `<div style="font-family:var(--mono);font-size:0.75rem;color:var(--text3);padding:1rem 0;">還沒有記錄，打下你的第一個想法！</div>`;
+    return;
+  }
+  list.innerHTML = quickNotes.map(n => `
+    <div class="qn-card">
+      <div class="qn-text">${n.content||''}</div>
+      <div class="qn-footer">
+        <span class="qn-time">${new Date(n.created_at).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span>
+        <span class="qn-del" onclick="deleteQuickNote('${n.id}')">刪除</span>
+      </div>
+    </div>`).join('');
+}
+
+async function addQuickNote() {
+  const content = document.getElementById('qn-content').value.trim();
+  if (!content) return;
+  const { error } = await sb.from('quick_notes').insert({ content });
+  if (error) { showToast('❌ 儲存失敗', 'error'); return; }
+  document.getElementById('qn-content').value = '';
+  await loadQuickData();
+  renderQuickNotes();
+  showToast('✓ 已記下', 'success');
+}
+
+async function deleteQuickNote(id) {
+  await sb.from('quick_notes').delete().eq('id', id);
+  await loadQuickData();
+  renderQuickNotes();
+}
+
+// ═══ PENDING TRACKS ═══
+function renderPendingTracks() {
+  const list = document.getElementById('pending-list');
+  if (!list) return;
+  if (pendingTracks.length === 0) {
+    list.innerHTML = `<div style="font-family:var(--mono);font-size:0.75rem;color:var(--text3);padding:0.5rem 0;">清單是空的，加入想分析的歌曲！</div>`;
+    return;
+  }
+  list.innerHTML = pendingTracks.map(p => `
+    <div class="pending-item">
+      <div class="pending-check ${p.done?'done':''}" onclick="togglePending('${p.id}',${p.done})">${p.done?'✓':''}</div>
+      <div class="pending-info">
+        <div class="pending-title ${p.done?'done':''}">${p.title}</div>
+        ${p.artist ? `<div class="pending-artist">${p.artist}</div>` : ''}
+      </div>
+      <div class="pending-actions">
+        ${!p.done ? `<span class="to-lib-btn" onclick="pendingToLibrary('${p.id}')">→ 加入歌曲庫</span>` : ''}
+        <span class="del-pending" onclick="deletePending('${p.id}')">✕</span>
+      </div>
+    </div>`).join('');
+}
+
+async function addPendingTrack() {
+  const title = document.getElementById('pt-title').value.trim();
+  if (!title) return;
+  const artist = document.getElementById('pt-artist').value.trim();
+  const { error } = await sb.from('pending_tracks').insert({ title, artist: artist || null });
+  if (error) { showToast('❌ 失敗', 'error'); return; }
+  document.getElementById('pt-title').value = '';
+  document.getElementById('pt-artist').value = '';
+  await loadQuickData();
+  renderPendingTracks();
+}
+
+async function togglePending(id, done) {
+  await sb.from('pending_tracks').update({ done: !done }).eq('id', id);
+  await loadQuickData();
+  renderPendingTracks();
+}
+
+async function deletePending(id) {
+  await sb.from('pending_tracks').delete().eq('id', id);
+  await loadQuickData();
+  renderPendingTracks();
+}
+
+function pendingToLibrary(id) {
+  const p = pendingTracks.find(t => t.id === id);
+  if (!p) return;
+  openAddTrack();
+  setTimeout(() => {
+    document.getElementById('f-title').value = p.title;
+    document.getElementById('f-artist').value = p.artist || '';
+  }, 100);
+}
+
+// ═══ AI USAGE TRACKING (Supabase sync) ═══
+async function trackAiUsage() {
+  const { data } = await sb.from('ai_usage').select('*').limit(1);
+  if (data && data.length > 0) {
+    const newCount = (data[0].count || 0) + 1;
+    await sb.from('ai_usage').update({ count: newCount, updated_at: new Date().toISOString() }).eq('id', data[0].id);
+  }
   renderAiUsage();
 }
 
-function renderAiUsage() {
-  const count = parseInt(localStorage.getItem('ai-analysis-count') || '0');
+async function renderAiUsage() {
+  const { data } = await sb.from('ai_usage').select('count').limit(1);
+  const count = data?.[0]?.count || 0;
   const costPerAnalysis = 0.003;
   const budget = 5.00;
   const cost = count * costPerAnalysis;
@@ -979,12 +1190,28 @@ CREATE POLICY "Public access notes" ON notes FOR ALL USING (true) WITH CHECK (tr
 
 // ═══ LOAD DATA ═══
 async function loadAll() {
-  await Promise.all([loadTracks(), loadNotes()]);
+  await Promise.all([loadTracks(), loadNotes(), loadQuickData(), loadTagGroups()]);
   renderTracks();
   renderNotes();
   renderFLX4Notes();
+  renderQuickNotes();
+  renderPendingTracks();
   buildCamelotWheel();
   renderAiUsage();
+}
+
+async function loadQuickData() {
+  const [qn, pt] = await Promise.all([
+    sb.from('quick_notes').select('*').order('created_at', { ascending: false }),
+    sb.from('pending_tracks').select('*').order('created_at', { ascending: false })
+  ]);
+  if (!qn.error) quickNotes = qn.data || [];
+  if (!pt.error) pendingTracks = pt.data || [];
+}
+
+async function loadTagGroups() {
+  const { data, error } = await sb.from('tag_groups').select('*').order('created_at');
+  if (!error && data) tagGroups = data;
 }
 
 async function loadTracks() {
@@ -1012,14 +1239,14 @@ function nav(panel) {
   document.getElementById('nav-' + panel)?.classList.add('active');
 
   // Update mobile nav
-  const panels = ['tracks','notes','theory','flx4','tools'];
+  const panels = ['tracks','quicknotes','notes','theory','flx4','tools'];
   panels.forEach(p => {
     const el = document.getElementById('bnav-' + p);
     if (el) el.classList.toggle('active', p === panel);
   });
 
   // Topbar
-  const titles = { tracks: '歌曲庫', notes: '學習筆記', theory: '樂理速查', flx4: 'FLX4 設備', tools: '工具入口' };
+  const titles = { tracks: '歌曲庫', quicknotes: '隨手筆記', notes: '學習筆記', theory: '樂理速查', flx4: 'FLX4 設備', tools: '工具入口' };
   document.getElementById('page-title').textContent = titles[panel] || '';
   document.getElementById('back-btn').style.display = 'none';
 
@@ -1027,6 +1254,8 @@ function nav(panel) {
   if (panel === 'tracks') {
     tr.innerHTML = `<div class="search-wrap"><input type="text" id="search-input" placeholder="搜尋..." oninput="renderTracks()"></div><button class="btn btn-primary" onclick="openAddTrack()">+ 新增歌曲</button>`;
     showTrackList();
+  } else if (panel === 'quicknotes') {
+    tr.innerHTML = '';
   } else if (panel === 'notes') {
     tr.innerHTML = `<button class="btn btn-primary" onclick="openAddNote('general')">+ 新增筆記</button>`;
   } else if (panel === 'flx4') {
@@ -1037,19 +1266,86 @@ function nav(panel) {
 }
 
 // ═══ TRACKS ═══
+function getTagClass(tag) {
+  for (const g of tagGroups) {
+    if ((g.tags || []).includes(tag)) {
+      if (g.group_name === '情境') return 'tag-context';
+      if (g.group_name === '地區風格') return 'tag-region';
+      if (g.group_name === '能量') return 'tag-energy';
+      if (g.group_name === '曲風') return 'tag-genre';
+      if (g.group_name === '歌手') return 'tag-artist';
+    }
+  }
+  return 'tag-other';
+}
+
+function getChipClass(groupName) {
+  if (groupName === '情境') return 'chip-context';
+  if (groupName === '地區風格') return 'chip-region';
+  if (groupName === '能量') return 'chip-energy';
+  if (groupName === '曲風') return 'chip-genre';
+  if (groupName === '歌手') return 'chip-artist';
+  return 'chip-other';
+}
+
+function setFilter(tag, group) {
+  if (tag === 'all') {
+    activeFilters = { group: 'all', tag: null };
+  } else {
+    activeFilters = { group, tag };
+  }
+  trackPage = 0;
+  renderTracks();
+}
+
+function setSort(mode) {
+  sortMode = mode;
+  renderTracks();
+}
+
 function renderTracks() {
   const query = document.getElementById('search-input')?.value?.toLowerCase() || '';
   const filterBar = document.getElementById('filter-bar');
 
-  // Build filter chips
-  const allTags = [...new Set(tracks.flatMap(t => t.tags || []))].sort();
-  filterBar.innerHTML = `
-    <div class="chip ${activeFilter==='all'?'active':''}" onclick="setFilter('all')">全部 (${tracks.length})</div>
-    ${allTags.map(tag => `<div class="chip ${activeFilter===tag?'active':''}" onclick="setFilter('${tag}')">${tag}</div>`).join('')}
-  `;
+  // Build grouped tag filter bar
+  const allActive = activeFilters.tag === null;
+  let filterHTML = `<div class="tag-groups">`;
+  filterHTML += `<div class="tag-group-row"><span class="tag-group-label">全部</span><div class="tag-group-chips"><span class="chip ${allActive ? 'chip-all' : 'chip-all inactive'}" onclick="setFilter('all','all')">全部 (${tracks.length})</span></div></div>`;
 
+  for (const g of tagGroups) {
+    const chipClass = getChipClass(g.group_name);
+    const chips = (g.tags || []).map(tag => {
+      const isActive = activeFilters.tag === tag;
+      return `<span class="chip ${chipClass}${isActive ? ' active' : ''}" onclick="setFilter('${tag}','${g.group_name}')">${tag}</span>`;
+    }).join('');
+    if (chips) filterHTML += `<div class="tag-group-row"><span class="tag-group-label">${g.group_name}</span><div class="tag-group-chips">${chips}</div></div>`;
+  }
+
+  // Other tags not in any group
+  const allGroupTags = tagGroups.flatMap(g => g.tags || []);
+  const allTrackTags = [...new Set(tracks.flatMap(t => t.tags || []))];
+  const otherTags = allTrackTags.filter(t => !allGroupTags.includes(t));
+  if (otherTags.length) {
+    const chips = otherTags.map(tag => {
+      const isActive = activeFilters.tag === tag;
+      return `<span class="chip chip-other${isActive ? ' active' : ''}" onclick="setFilter('${tag}','other')">${tag}</span>`;
+    }).join('');
+    filterHTML += `<div class="tag-group-row"><span class="tag-group-label">其他</span><div class="tag-group-chips">${chips}</div></div>`;
+  }
+
+  filterHTML += `</div>`;
+  filterHTML += `<div class="sort-row"><span class="sort-label">排序：</span>
+    <button class="sort-btn ${sortMode==='newest'?'active':''}" onclick="setSort('newest')">最新</button>
+    <button class="sort-btn ${sortMode==='bpm_asc'?'active':''}" onclick="setSort('bpm_asc')">BPM ↑</button>
+    <button class="sort-btn ${sortMode==='bpm_desc'?'active':''}" onclick="setSort('bpm_desc')">BPM ↓</button>
+    <button class="sort-btn ${sortMode==='energy_desc'?'active':''}" onclick="setSort('energy_desc')">能量 ↑</button>
+  </div>`;
+
+  filterBar.innerHTML = filterHTML;
+
+  // Filter tracks
   let filtered = tracks;
-  if (activeFilter !== 'all') filtered = filtered.filter(t => (t.tags||[]).includes(activeFilter));
+  if (activeFilters.tag) filtered = filtered.filter(t => (t.tags||[]).includes(activeFilters.tag));
   if (query) filtered = filtered.filter(t =>
     (t.title||'').toLowerCase().includes(query) ||
     (t.artist||'').toLowerCase().includes(query) ||
@@ -1057,6 +1353,11 @@ function renderTracks() {
     (t.genre||'').toLowerCase().includes(query) ||
     String(t.bpm||'').includes(query)
   );
+
+  // Sort
+  if (sortMode === 'bpm_asc') filtered = [...filtered].sort((a,b) => (a.bpm||0)-(b.bpm||0));
+  else if (sortMode === 'bpm_desc') filtered = [...filtered].sort((a,b) => (b.bpm||0)-(a.bpm||0));
+  else if (sortMode === 'energy_desc') filtered = [...filtered].sort((a,b) => (b.energy||0)-(a.energy||0));
 
   const grid = document.getElementById('track-grid');
   if (filtered.length === 0) {
@@ -1069,7 +1370,7 @@ function renderTracks() {
     const energy = parseInt(t.energy) || 0;
     const energyBars = Array.from({length:10}, (_,i) =>
       `<div class="e-seg ${i<energy?'on':''}${i>=7&&i<energy?' hi':''}"></div>`).join('');
-    const tags = (t.tags||[]).map(tag => `<span class="tag tag-default">${tag}</span>`).join('');
+    const tags = (t.tags||[]).map(tag => `<span class="tag ${getTagClass(tag)}">${tag}</span>`).join('');
     return `
       <div class="track-card" onclick="openTrackDetail('${t.id}')">
         <div class="tc-header">
@@ -1088,11 +1389,6 @@ function renderTracks() {
         </div>
       </div>`;
   }).join('');
-}
-
-function setFilter(f) {
-  activeFilter = f;
-  renderTracks();
 }
 
 function showTrackList() {
@@ -1534,22 +1830,6 @@ function closeModal(id) {
 document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.style.display = 'none'; });
 });
-
-function showBackupMenu() {
-  const m = document.createElement('div');
-  m.className = 'modal-overlay';
-  m.style.display = 'flex';
-  m.innerHTML = `
-    <div class="modal" style="max-width:320px;">
-      <div class="modal-header"><h2>💾 備份</h2><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div>
-      <div class="modal-body" style="display:flex;flex-direction:column;gap:0.75rem;">
-        <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="exportData();this.closest('.modal-overlay').remove()">📥 匯出備份 JSON</button>
-        <button class="btn btn-ghost" style="width:100%;justify-content:center;" onclick="importData();this.closest('.modal-overlay').remove()">📤 匯入備份 JSON</button>
-      </div>
-    </div>`;
-  document.body.appendChild(m);
-  m.addEventListener('click', e => { if (e.target === m) m.remove(); });
-}
 
 // ═══ EXPORT / IMPORT ═══
 function exportData() {
