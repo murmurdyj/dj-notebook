@@ -737,6 +737,13 @@ textarea.note-input { width: 100%; background: var(--surface); border: 1px solid
           <button class="btn btn-ghost" onclick="exportData()" style="flex:1;">📥 匯出備份</button>
           <button class="btn btn-ghost" onclick="importData()" style="flex:1;">📤 匯入備份</button>
         </div>
+
+        <p style="font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;color:var(--text3);text-transform:uppercase;margin:1.5rem 0 0.9rem;">🏷 標籤管理</p>
+        <div id="tag-manager-list"></div>
+        <div style="display:flex;gap:0.75rem;margin-top:0.75rem;">
+          <input type="text" id="new-group-name" class="qn-input" placeholder="新增群組名稱..." style="flex:1;">
+          <button class="btn btn-ghost" onclick="addTagGroup()" style="white-space:nowrap;">+ 新增群組</button>
+        </div>
       </div>
 
     </div>
@@ -1198,6 +1205,7 @@ async function loadAll() {
   renderPendingTracks();
   buildCamelotWheel();
   renderAiUsage();
+  renderTagManager();
 }
 
 async function loadQuickData() {
@@ -1260,9 +1268,10 @@ function nav(panel) {
     tr.innerHTML = `<button class="btn btn-primary" onclick="openAddNote('general')">+ 新增筆記</button>`;
   } else if (panel === 'flx4') {
     tr.innerHTML = `<button class="btn btn-primary" onclick="openAddNote('flx4')">+ 新增筆記</button>`;
-  } else {
+  } else if (panel === 'tools') {
     tr.innerHTML = '';
-  }
+    renderTagManager();
+  } else {
 }
 
 // ═══ TRACKS ═══
@@ -1831,7 +1840,82 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.style.display = 'none'; });
 });
 
-// ═══ EXPORT / IMPORT ═══
+// ═══ TAG MANAGER ═══
+function renderTagManager() {
+  const list = document.getElementById('tag-manager-list');
+  if (!list) return;
+  if (tagGroups.length === 0) {
+    list.innerHTML = `<div style="font-family:var(--mono);font-size:0.75rem;color:var(--text3);padding:0.5rem 0;">還沒有標籤群組</div>`;
+    return;
+  }
+  list.innerHTML = tagGroups.map(g => {
+    const chipClass = getChipClass(g.group_name);
+    const tags = (g.tags || []).map(tag => `
+      <span class="tmg-tag ${chipClass}" style="display:inline-flex;align-items:center;gap:4px;">
+        ${tag}
+        <span class="tmg-tag-del" onclick="removeTagFromGroup('${g.id}','${tag}')">✕</span>
+      </span>`).join('');
+    return `
+      <div class="tag-manager-group" style="background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:0.9rem;margin-bottom:0.6rem;">
+        <div class="tmg-header">
+          <span class="tmg-name" style="color:var(--text2);">${g.group_name}</span>
+          <span class="sec-edit" style="color:var(--accent3);" onclick="deleteTagGroup('${g.id}')">🗑 刪除群組</span>
+        </div>
+        <div class="tmg-tags" style="margin-bottom:0.6rem;">${tags || '<span style="font-family:var(--mono);font-size:0.68rem;color:var(--text3);">還沒有標籤</span>'}</div>
+        <div style="display:flex;gap:0.5rem;">
+          <input type="text" id="new-tag-${g.id}" class="qn-input" placeholder="新增標籤..." style="flex:1;font-size:0.75rem;padding:0.35rem 0.7rem;">
+          <button class="btn btn-ghost btn-sm" onclick="addTagToGroup('${g.id}')">+ 新增</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function addTagToGroup(groupId) {
+  const input = document.getElementById('new-tag-' + groupId);
+  const newTag = input?.value?.trim();
+  if (!newTag) return;
+  const group = tagGroups.find(g => g.id === groupId);
+  if (!group) return;
+  const updatedTags = [...(group.tags || []), newTag];
+  const { error } = await sb.from('tag_groups').update({ tags: updatedTags }).eq('id', groupId);
+  if (error) { showToast('❌ 失敗', 'error'); return; }
+  if (input) input.value = '';
+  await loadTagGroups();
+  renderTagManager();
+  renderTracks();
+  showToast('✓ 標籤已新增', 'success');
+}
+
+async function removeTagFromGroup(groupId, tag) {
+  const group = tagGroups.find(g => g.id === groupId);
+  if (!group) return;
+  const updatedTags = (group.tags || []).filter(t => t !== tag);
+  await sb.from('tag_groups').update({ tags: updatedTags }).eq('id', groupId);
+  await loadTagGroups();
+  renderTagManager();
+  renderTracks();
+}
+
+async function addTagGroup() {
+  const name = document.getElementById('new-group-name')?.value?.trim();
+  if (!name) return;
+  const { error } = await sb.from('tag_groups').insert({ group_name: name, tags: [] });
+  if (error) { showToast('❌ 失敗', 'error'); return; }
+  document.getElementById('new-group-name').value = '';
+  await loadTagGroups();
+  renderTagManager();
+  showToast('✓ 群組已新增', 'success');
+}
+
+async function deleteTagGroup(groupId) {
+  if (!confirm('確定刪除這個群組？群組裡的標籤設定會消失，但歌曲上的標籤不受影響。')) return;
+  await sb.from('tag_groups').delete().eq('id', groupId);
+  await loadTagGroups();
+  renderTagManager();
+  renderTracks();
+}
+
+
 function exportData() {
   const data = { tracks, notes, exportedAt: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
