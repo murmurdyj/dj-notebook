@@ -1,0 +1,18 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    - cron: '0 10 * * 1'  # 每週一早上10點執行
+  workflow_dispatch:  # 也可以手動觸發
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: sb_publishable_tac-mTmhTpZaY0My5aXoyA_YEg1rhfJ" \
+            -H "Authorization: Bearer sb_publishable_tac-mTmhTpZaY0My5aXoyA_YEg1rhfJ" \
+            "https://nabybzemfhgsgkaylvcz.supabase.co/rest/v1/tracks?select=id&limit=1"
+          echo " - Supabase pinged"
