@@ -2,7 +2,7 @@ name: Keep Supabase Alive
 
 on:
   schedule:
-    - cron: '0 10 * * 1'  # 每週一早上10點執行
+    - cron: '0 2 * * *'  # 每週一早上10點執行
   workflow_dispatch:  # 也可以手動觸發
 
 jobs:
